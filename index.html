@@ -103,6 +103,7 @@
   .map-btn:hover { background: var(--cream); }
   .map-btn.active-all  { background: var(--dl-bg); color: var(--dl-color); border-color: var(--dl-border); }
   .map-btn.active-food { background: var(--food-bg); color: var(--food); border-color: var(--food); }
+  .map-btn.active-route { background: #e8f0fe; color: #1a73e8; border-color: #1a73e8; }
 
   /* ── TABS ────────────────────────────────── */
   .day-tabs { display: flex; border-bottom: 1px solid var(--border); flex-shrink: 0; }
@@ -341,6 +342,7 @@
         <button class="map-btn active-all" id="btn-all"  onclick="setMapMode('all')">All stops</button>
         <button class="map-btn"            id="btn-food" onclick="setMapMode('food')">&#127807; Food</button>
         <button class="map-btn"            id="btn-locate" onclick="locateMe()" title="My location">&#128205;</button>
+        <button class="map-btn"            id="btn-route" onclick="toggleRoute()" title="Show route to selected stop">Route</button>
       </div>
     </div>
     <div class="resize-v" id="resize-v" title="Drag to resize map"></div>
@@ -709,6 +711,8 @@ var map = null;
 var allMarkers = []; // [{leaflet, idx, type}]
 var mapMode = 'all';
 var isMobile = false;
+var routeEnabled = false;
+var routeLine = null;
 
 function checkMobile() { isMobile = window.innerWidth <= 800; }
 
@@ -788,6 +792,40 @@ function highlightMarker(idx) {
   }
 }
 
+function clearRouteLine() {
+  if (routeLine) {
+    map.removeLayer(routeLine);
+    routeLine = null;
+  }
+}
+
+function updateRouteLine() {
+  clearRouteLine();
+  if (!routeEnabled || !lastGeoPos || currentIdx === null) return;
+
+  var item = DAYS[currentDay].items[currentIdx];
+  if (!item || !item.lat || !item.lng) return;
+
+  routeLine = L.polyline([lastGeoPos, [item.lat, item.lng]], {
+    color: '#1a73e8',
+    weight: 3,
+    opacity: 0.78,
+    dashArray: '7 8',
+    lineCap: 'round',
+    interactive: false
+  }).addTo(map);
+}
+
+function toggleRoute() {
+  routeEnabled = !routeEnabled;
+  var btn = document.getElementById('btn-route');
+  if (btn) {
+    btn.className = 'map-btn' + (routeEnabled ? ' active-route' : '');
+    btn.title = routeEnabled ? 'Hide route line' : 'Show route to selected stop';
+  }
+  updateRouteLine();
+}
+
 function setMapMode(mode, keepSelection) {
   mapMode = mode;
   var btnAll  = document.getElementById('btn-all');
@@ -802,6 +840,7 @@ function setMapMode(mode, keepSelection) {
     closeSheet();
   }
   renderMarkers(currentDay);
+  updateRouteLine();
 
   // zoom to fit food markers if food mode
   if (mode === 'food' && allMarkers.length > 0) {
@@ -916,6 +955,7 @@ function selectItem(idx) {
     var item = DAYS[currentDay].items[idx];
     if (item.lat) map.flyTo([item.lat, item.lng], 17, { duration: 0.55 });
   }
+  updateRouteLine();
 }
 
 function closeSheet() {
@@ -941,6 +981,7 @@ function switchDay(day) {
   document.querySelectorAll('.t-item').forEach(function(el){ el.classList.remove('selected'); });
   document.getElementById('detail-panel').innerHTML = '';
   renderMarkers(day);
+  updateRouteLine();
   map.flyTo(DAYS[day].center, DAYS[day].zoom, { duration: 0.7 });
   setTimeout(fitTimeline, 50);
 }
@@ -953,6 +994,7 @@ function switchFoodView() {
   document.getElementById('tab-dca').className = 'day-tab';
   document.getElementById('tab-food').className = 'day-tab active-food';
   showFoodGuide(foodGuidePark || currentDay);
+  updateRouteLine();
 }
 
 // ─── DYNAMIC TIMELINE HEIGHT ──────────────────────────────────────────────────
@@ -990,6 +1032,7 @@ function startGeolocation() {
       var lng = pos.coords.longitude;
       lastGeoPos = [lat, lng];
       renderGeoDot(lat, lng, pos.coords.accuracy);
+      updateRouteLine();
     },
     function() { /* silently ignore errors / denials */ },
     { enableHighAccuracy: true, maximumAge: 5000, timeout: 10000 }
@@ -1045,6 +1088,7 @@ function locateMe() {
       var lng = pos.coords.longitude;
       lastGeoPos = [lat, lng];
       renderGeoDot(lat, lng, pos.coords.accuracy);
+      updateRouteLine();
       map.flyTo([lat, lng], Math.max(map.getZoom(), 17), { duration: 0.6 });
       if (btn) { btn.textContent = '📍'; btn.style.opacity = '1'; }
     },
@@ -1493,5 +1537,7 @@ window.addEventListener('orientationchange', function(){
 })();
 
 </script>
+</body>
+</html>
 </body>
 </html>
