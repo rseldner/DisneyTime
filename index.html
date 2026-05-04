@@ -73,17 +73,18 @@
   }
 
   /* ── SHELL ───────────────────────────────── */
-  .app-shell { display: grid; grid-template-columns: 370px 1fr; min-height: calc(100vh - 130px); }
+  .app-shell { display: flex; flex-direction: row; min-height: calc(100vh - 130px); }
 
   .sidebar {
-    background: var(--warm-white); border-right: 1px solid var(--border);
+    background: var(--warm-white);
     display: flex; flex-direction: column;
     height: calc(100vh - 130px); position: sticky; top: 0; overflow: hidden;
+    width: 370px; flex-shrink: 0; min-width: 200px; max-width: 70vw;
   }
 
   /* ── MAP ─────────────────────────────────── */
   #map-wrap { position: relative; flex-shrink: 0; border-bottom: 1px solid var(--border); }
-  #map { height: 230px; }
+  #map { height: 230px; min-height: 80px; }
 
   .map-toolbar {
     position: absolute; top: 7px; right: 7px; z-index: 800;
@@ -112,6 +113,7 @@
   .day-tab:hover { color: var(--ink); background: var(--cream); }
   .day-tab.active-dl  { color: var(--dl-color);  border-bottom-color: var(--dl-color);  background: var(--dl-bg); }
   .day-tab.active-dca { color: var(--dca-color); border-bottom-color: var(--dca-color); background: var(--dca-bg); }
+  .day-tab.active-food { color: var(--food); border-bottom-color: var(--food); background: var(--food-bg); }
 
   /* ── STATS ───────────────────────────────── */
   .stats-bar { display: grid; grid-template-columns: repeat(4,1fr); gap: 1px; background: var(--border); border-bottom: 1px solid var(--border); flex-shrink: 0; }
@@ -231,7 +233,7 @@
   }
 
   /* ── FOOD GUIDE ──────────────────────────── */
-  .food-guide-wrap { display: flex; flex-direction: column; flex: 1; overflow: hidden; }
+  .food-guide-wrap { display: flex; flex-direction: column; flex: 1; overflow: hidden; min-height: 0; }
   .food-guide-header { padding: 12px 20px 10px; background: var(--warm-white); border-bottom: 1px solid var(--border); flex-shrink: 0; }
   .food-guide-header h2 { font-family: 'DM Serif Display', Georgia, serif; font-size: 1.25rem; font-weight: 400; color: var(--food); display: flex; align-items: center; gap: 8px; }
   .food-guide-badge { background: var(--food-bg); color: var(--food); font-size: 9.5px; font-weight: 700; padding: 2px 7px; border-radius: 4px; }
@@ -243,7 +245,7 @@
   .fp-tab.active-dl  { background: var(--dl-bg);  color: var(--dl-color);  border-color: var(--dl-color); }
   .fp-tab.active-dca { background: var(--dca-bg); color: var(--dca-color); border-color: var(--dca-color); }
 
-  .food-guide-scroll { overflow-y: auto; flex: 1; -webkit-overflow-scrolling: touch; }
+  .food-guide-scroll { overflow-y: auto; flex: 1; -webkit-overflow-scrolling: touch; min-height: 0; }
   .food-guide-scroll::-webkit-scrollbar { width: 3px; }
   .food-guide-scroll::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
 
@@ -279,6 +281,36 @@
   .fg-venue-note { font-size: 10px; color: var(--ink-muted); padding: 5px 0 2px; font-style: italic; line-height: 1.5; }
   .fg-warn { font-size: 10px; color: #c0392b; font-weight: 600; margin-top: 3px; }
 
+
+  /* ── RESIZE HANDLES ──────────────────────── */
+  .resize-h {
+    width: 6px; flex-shrink: 0; cursor: col-resize;
+    background: var(--border);
+    position: relative; z-index: 10; transition: background 0.15s;
+  }
+  .resize-h:hover, .resize-h.dragging { background: var(--dl-color); }
+  .resize-h::after {
+    content: ''; position: absolute; top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    width: 2px; height: 40px; border-radius: 2px;
+    background: rgba(255,255,255,0.6);
+  }
+
+  .resize-v {
+    height: 6px; flex-shrink: 0; cursor: row-resize;
+    background: var(--border); width: 100%;
+    position: relative; z-index: 10; transition: background 0.15s;
+  }
+  .resize-v:hover, .resize-v.dragging { background: var(--dl-color); }
+  .resize-v::after {
+    content: ''; position: absolute; top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    height: 2px; width: 40px; border-radius: 2px;
+    background: rgba(255,255,255,0.6);
+  }
+
+  .main-panel { flex: 1; min-width: 0; display: flex; flex-direction: column; background: var(--cream); }
+
 </style>
 </head>
 <body>
@@ -302,16 +334,19 @@
         <button class="map-btn active-all" id="btn-all"  onclick="setMapMode('all')">All stops</button>
         <button class="map-btn"            id="btn-food" onclick="setMapMode('food')">&#127807; Food</button>
         <button class="map-btn"            id="btn-locate" onclick="locateMe()" title="My location">&#128205;</button>
-        <button class="map-btn"            id="btn-foodguide" onclick="toggleFoodGuide()" title="Full food guide">&#128218;</button>
       </div>
     </div>
+    <div class="resize-v" id="resize-v" title="Drag to resize map"></div>
     <div class="day-tabs">
       <button class="day-tab active-dl" onclick="switchDay('dl')"  id="tab-dl">&#127984; May 5 — Disneyland</button>
       <button class="day-tab"           onclick="switchDay('dca')" id="tab-dca">&#127905; May 6 — DCA</button>
+      <button class="day-tab"           onclick="switchFoodView()" id="tab-food">&#127807; Food</button>
     </div>
     <div class="stats-bar" id="stats-bar"></div>
     <div class="timeline-scroll" id="timeline"></div>
+    <div class="food-guide-wrap" id="food-guide-wrap" style="display:none;flex-direction:column;flex:1;overflow:hidden;"></div>
   </aside>
+  <div class="resize-h" id="resize-h" title="Drag to resize"></div>
 
   <main class="main-panel" id="main-panel">
     <div class="legend-bar" id="legend-bar">
@@ -322,7 +357,6 @@
       <span class="legend-item"><span class="legend-dot" style="background:var(--tip)"></span>Tip / Strategy</span>
     </div>
     <div class="detail-panel" id="detail-panel"></div>
-    <div class="food-guide-wrap" id="food-guide-wrap" style="display:none;"></div>
   </main>
 </div>
 
@@ -345,72 +379,72 @@ var DAYS = {
       { num: '~45m', lbl: 'Rise wait saved' },
       { num: '5',    lbl: 'Vegan stops' }
     ],
-    center: [33.8140, -117.9200], zoom: 15,
+    center: [33.8140, -117.9195], zoom: 16,
     items: [
       { section: 'Morning — rope drop blitz',
         time: '7:45 AM', type: 'tip', title: 'Arrive & gate strategy',
-        lat: 33.8096, lng: -117.9189,
+        lat: 33.809137, lng: -117.921317,
         desc: 'Be at the main gate by 7:45. <strong>As you walk in, immediately book Indiana Jones via Multi Pass</strong> — MP chain #1 of 9.<br><br>Rise of the Resistance: <strong>no Single Pass needed</strong>. Head there standby at rope drop — the line is often just 15–20 min at opening vs. 60+ min by mid-morning. Walk fast straight to Galaxy\'s Edge from the entrance.',
         badges: [], wait: '', land_label: 'Main Entrance', solo: null,
         mp_next: null },
 
       { time: '8:00 AM', type: 'standby', title: "Star Wars: Rise of the Resistance",
-        lat: 33.8208, lng: -117.9228,
+        lat: 33.814439, lng: -117.922808,
         desc: "Walk fast from the gate straight to Galaxy's Edge at the back of the park. Join standby immediately at park open — the first 15–20 min are dramatically shorter before crowds catch up. The ride lasts ~18 min with multiple ride systems, simulator drops, and live-action sequences.",
         badges: ['Standby — rope drop', 'avg 60 min midday'],
         wait: '~15–20 min at open / 60 min avg midday', land_label: "Galaxy's Edge", solo: false,
         mp_next: 'Indiana Jones is your active booking. If your 2-hour window has elapsed since the gate, book <strong>Haunted Mansion</strong> next.' },
 
       { time: '8:50 AM', type: 'standby', title: "Millennium Falcon: Smugglers Run",
-        lat: 33.8204, lng: -117.9220,
+        lat: 33.814827, lng: -117.921349,
         desc: "Right next door to Rise — standby is short at this hour. Interactive simulator: you pilot, gun, or engineer the Falcon. Try Single Rider — solo riders are often assigned Pilot, the best role.",
         badges: ['Standby AM', 'avg 28 min'],
         wait: '28 min avg / 62 min max', land_label: "Galaxy's Edge", solo: true,
         mp_next: 'Indiana Jones is your active booking. If your 2-hour window has elapsed, book <strong>Haunted Mansion</strong> now.' },
 
       { time: '9:30 AM', type: 'food', title: "Ronto Roasters + Docking Bay 7",
-        lat: 33.8206, lng: -117.9222,
+        lat: 33.814327, lng: -117.921548,
         desc: "<strong>Vegan (Ronto Roasters):</strong> Ronto-less Garden Wrap — Impossible sausage, kimchi slaw, pickled cucumber, gochujang pita. Sells out by early afternoon — mobile order it now for pickup after Indiana Jones.<br><br><strong>Vegan (Docking Bay 7):</strong> Felucian Kefta & Hummus Garden Spread — Impossible meatballs, herbed hummus, pita.<br><br><strong>Milk Stand:</strong> Blue and Green Milk (both vegan, rice-coconut blend).",
         badges: ['Vegan options', "Galaxy's Edge"],
         wait: '', land_label: "Galaxy's Edge", solo: null, mp_next: false },
 
       { time: '10:00 AM', type: 'multi', title: "Indiana Jones Adventure",
-        lat: 33.8122, lng: -117.9249,
+        lat: 33.810259, lng: -117.921031,
         desc: "Use the Multi Pass window you booked at the gate (MP chain: #1 of 9). One of the original E-tickets, celebrating its 30th anniversary in 2025. Enhanced motion vehicles through the Temple of the Forbidden Eye. Single Rider available.",
         badges: ['Multi Pass', 'avg 44 min'],
         wait: '44 min avg / 68 min max', land_label: 'Adventureland', solo: true,
         mp_next: 'Book <strong>Haunted Mansion</strong> now — MP chain #2.' },
 
       { time: '10:45 AM', type: 'standby', title: "Jungle Cruise",
-        lat: 33.8118, lng: -117.9245,
+        lat: 33.811391, lng: -117.920015,
         desc: "Classic slow boat ride with live skipper narration. Short morning wait (avg 15 min). Easy standby win while you're already in Adventureland.",
         badges: ['Standby', 'avg 15 min'],
         wait: '15 min avg / 30 min max', land_label: 'Adventureland', solo: false,
         mp_next: false },
 
       { time: '11:15 AM', type: 'food', title: "Tiki Juice Bar — Dole Whip",
-        lat: 33.8115, lng: -117.9242,
+        lat: 33.811706, lng: -117.919601,
         desc: "<strong>Vegan:</strong> Classic pineapple Dole Whip — always plant-based. Walk-up only.<br><br><strong>Nearby at The Tropical Hideaway:</strong> Chile-Mango Whip (pineapple-mango Dole Whip with chamoy and chile-lime — vegan), Blood Orange Agua Fresca Float (vegan).",
         badges: ['Vegan', 'Adventureland'],
         wait: '', land_label: 'Adventureland', solo: null, mp_next: false },
 
       { section: 'Mid-morning — New Orleans Square + Bayou Country',
         time: '11:30 AM', type: 'standby', title: "Pirates of the Caribbean",
-        lat: 33.8121, lng: -117.9230,
+        lat: 33.811282, lng: -117.920837,
         desc: "Standby-only since July 2025 — waits are manageable (avg 19 min). The original E-ticket and a park cornerstone. Blue Bayou Restaurant dining room is literally inside this attraction. Two small drops, Captain Jack Sparrow scenes, burning town finale.",
         badges: ['Standby only', 'avg 19 min'],
         wait: '19 min avg / 36 min max', land_label: 'New Orleans Square', solo: false,
         mp_next: 'Haunted Mansion should be your active booking. If not yet booked, book <strong>Haunted Mansion</strong> now — MP chain #2.' },
 
       { time: '12:00 PM', type: 'multi', title: "Haunted Mansion",
-        lat: 33.8119, lng: -117.9226,
+        lat: 33.81165, lng: -117.921856,
         desc: "Use your Multi Pass window (MP chain: #2 of 9). Standby climbs to 40+ min by midday — Multi Pass essential. The Doom Buggy dark ride through a 999-haunt antebellum mansion. New ghostly bride Audio-Animatronic added January 2025.",
         badges: ['Multi Pass', 'avg 30 min'],
         wait: '30 min avg / 53 min max', land_label: 'New Orleans Square', solo: false,
         mp_next: 'Book <strong>Tiana\'s Bayou Adventure</strong> now — MP chain #3.' },
 
       { time: '12:45 PM', type: 'multi', title: "Tiana's Bayou Adventure",
-        lat: 33.8094, lng: -117.9208,
+        lat: 33.812119, lng: -117.922888,
         desc: "Use your Multi Pass window (MP chain: #3 of 9). New log flume — 50-foot final drop, 19 new critter Audio-Animatronics, three musical bands. Afternoons hit 60+ min standby. Single Rider available.",
         badges: ['Multi Pass', 'avg 32 min'],
         wait: '32 min avg / 67 min max', land_label: 'Bayou Country', solo: true,
@@ -418,47 +452,47 @@ var DAYS = {
 
       { section: 'Lunch',
         time: '1:30 PM', type: 'food', title: "Café Orleans or Royal Street Veranda",
-        lat: 33.8120, lng: -117.9228,
+        lat: 33.811223, lng: -117.921251,
         desc: "<strong>Café Orleans (vegan):</strong> Garden Grain Salad (arugula, couscous, farro, garbanzo beans, roasted red pepper, red wine vinaigrette). Breadstick is plant-based.<br><br><strong>Royal Street Veranda (vegan):</strong> Rotating plant-based bread bowl soups — confirm the green leaf icon on the day.<br><br><strong>Mint Julep Bar:</strong> Non-alcoholic mint julep is vegan. Mickey beignets are not.",
         badges: ['Vegan options', 'New Orleans Square'],
         wait: '', land_label: 'New Orleans Square', solo: null, mp_next: false },
 
       { section: 'Afternoon — Frontierland + Tomorrowland',
         time: '2:15 PM', type: 'multi', title: "Big Thunder Mountain Railroad",
-        lat: 33.8104, lng: -117.9205,
+        lat: 33.81257, lng: -117.92049,
         desc: '"The Wildest Ride in the Wilderness." Use your Multi Pass window (MP chain: #4 of 9). 40" height. Afternoon standby spikes here. Great views across the Rivers of America from the top.',
         badges: ['Multi Pass', 'avg 33 min'],
         wait: '33 min avg / 56 min max', land_label: 'Frontierland', solo: false,
         mp_next: 'Book <strong>Space Mountain</strong> now — MP chain #5. Do this immediately; Space Mountain windows sell out fast.' },
 
       { time: '2:50 PM', type: 'standby', title: "Mark Twain Riverboat",
-        lat: 33.8101, lng: -117.9198,
+        lat: 33.812237, lng: -117.920484,
         desc: "Full paddle-wheel loop around Tom Sawyer Island — avg 10 min wait. A genuine classic and a great chance to rest your feet. Upper deck has perfect views of Frontierland and the Rivers of America.",
         badges: ['Standby', 'avg 10 min'],
         wait: '10 min avg', land_label: 'Frontierland', solo: false, mp_next: false },
 
       { time: '3:20 PM', type: 'standby', title: "Pirate's Lair on Tom Sawyer Island",
-        lat: 33.8098, lng: -117.9195,
+        lat: 33.812058, lng: -117.921028,
         desc: "Raft across from the Frontierland dock — walk-through caves, fort, suspension bridges, Captain Jack Sparrow theming. Only 5 min avg wait. Great mid-afternoon break from queuing.",
         badges: ['Standby', 'avg 5 min'],
         wait: '5 min avg', land_label: 'Frontierland', solo: false, mp_next: false },
 
       { time: '4:00 PM', type: 'multi', title: "Space Mountain (Hyperspace Mountain)",
-        lat: 33.8146, lng: -117.9170,
+        lat: 33.810979, lng: -117.917488,
         desc: "Use your Multi Pass window (MP chain: #5 of 9). Second-highest avg wait in the park (51 min). Indoor roller coaster entirely in the dark with Star Wars Hyperspace overlay during select periods. Single Rider available.",
         badges: ['Multi Pass', 'avg 51 min'],
         wait: '51 min avg / 81 min max', land_label: 'Tomorrowland', solo: true,
         mp_next: 'Book <strong>Star Tours</strong> now — MP chain #6.' },
 
       { time: '4:45 PM', type: 'multi', title: "Star Tours — The Adventures Continue",
-        lat: 33.8148, lng: -117.9165,
+        lat: 33.811963, lng: -117.917858,
         desc: "Use your Multi Pass window (MP chain: #6 of 9). 250+ randomized story variations including The Mandalorian, Ahsoka, and Andor. 3D motion simulator.",
         badges: ['Multi Pass', 'avg 24 min'],
         wait: '24 min avg / 47 min max', land_label: 'Tomorrowland', solo: false,
         mp_next: 'Book <strong>Matterhorn Bobsleds</strong> now for an evening slot — MP chain #7.' },
 
       { time: '5:15 PM', type: 'multi', title: "Buzz Lightyear Astro Blasters",
-        lat: 33.8150, lng: -117.9168,
+        lat: 33.812218, lng: -117.91767,
         desc: "Use Multi Pass or standby — waits drop in late afternoon (avg 18 min). Interactive shooter dark ride — compete for high scores. No height requirement. No Single Rider.<br><br><em>Matterhorn is already your active MP booking from Star Tours — no additional action needed.</em>",
         badges: ['Multi Pass or Standby PM', 'avg 18 min'],
         wait: '18 min avg / 35 min max', land_label: 'Tomorrowland', solo: false,
@@ -466,28 +500,28 @@ var DAYS = {
 
       { section: 'Dinner',
         time: '5:50 PM', type: 'food', title: "River Belle Terrace or Rancho del Zócalo",
-        lat: 33.8104, lng: -117.9196,
+        lat: 33.811563, lng: -117.920468,
         desc: "<strong>River Belle Terrace (vegan):</strong> Impossible Meatloaf (roasted potatoes, garden vegetables, tomato glaze). Plant-Based Grain Bowl. Good riverside patio near Fantasmic viewing area.<br><br><strong>Rancho del Zócalo (vegan):</strong> Hacienda Salad (kale-romaine, achiote mushrooms, grilled nopal salsa, lime corn riblets).<br><br>Check the app for Fantasmic timing — if it's on tonight, the Frontierland riverfront is a great viewing spot.",
         badges: ['Vegan options', 'Frontierland'],
         wait: '', land_label: 'Frontierland', solo: null, mp_next: false },
 
       { section: "Evening — Fantasyland + Mickey's Toontown",
         time: '7:00 PM', type: 'multi', title: "Matterhorn Bobsleds",
-        lat: 33.8155, lng: -117.9185,
+        lat: 33.813412, lng: -117.917834,
         desc: "Use your Multi Pass window (MP chain: #7 of 9) — booked earlier from Star Tours. Classic two-track tubular steel mountain coaster, Yeti encounter, 42\" height. Single Rider available.",
         badges: ['Multi Pass', 'avg 35 min'],
         wait: '35 min avg / 64 min max', land_label: 'Fantasyland', solo: true,
         mp_next: 'Book <strong>Mickey & Minnie\'s Runaway Railway</strong> now — MP chain #8.' },
 
       { time: '7:45 PM', type: 'multi', title: "Mickey & Minnie's Runaway Railway",
-        lat: 33.8178, lng: -117.9196,
+        lat: 33.815777, lng: -117.91858,
         desc: "Use your Multi Pass window (MP chain: #8 of 9). Trackless dark ride into a Mickey Mouse cartoon short — no height requirement, no Single Rider. Evening is ideal as families with young kids start heading out.",
         badges: ['Multi Pass', 'avg 33 min'],
         wait: '33 min avg / 60 min max', land_label: "Mickey's Toontown", solo: false,
         mp_next: 'Book <strong>Roger Rabbit\'s Car Toon Spin</strong> now — MP chain #9 (final).' },
 
       { time: '8:15 PM', type: 'multi', title: "Roger Rabbit's Car Toon Spin",
-        lat: 33.8174, lng: -117.9200,
+        lat: 33.815298, lng: -117.918062,
         desc: "Use your Multi Pass window (MP chain: #9 of 9 — final). Spinning taxi-cab dark ride through Toontown — you control the spin. 32\" height requirement. Short ride with great energy.",
         badges: ['Multi Pass', 'avg 31 min'],
         wait: '31 min avg / 55 min max', land_label: "Mickey's Toontown", solo: false,
@@ -495,21 +529,21 @@ var DAYS = {
 
       { section: 'Late night — crowds thin after 8 PM',
         time: '8:45 PM', type: 'standby', title: "Peter Pan's Flight",
-        lat: 33.8158, lng: -117.9215,
+        lat: 33.81321, lng: -117.91884,
         desc: "Standby-only — waits drop significantly after 8 PM. <strong>Do not queue this midday</strong> (avg 31 min becomes 40–50 at peak). Classic suspended dark ride flying over London and Neverland. One of the original 1955 opening-day attractions.",
         badges: ['Standby only', 'avg 31 min'],
         wait: '31 min avg / 43 min max', land_label: 'Fantasyland', solo: false,
         mp_next: false },
 
       { time: '9:20 PM', type: 'standby', title: "Classic Fantasyland night sweep",
-        lat: 33.8160, lng: -117.9210,
+        lat: 33.813525, lng: -117.918942,
         desc: "Late-night waits drop to near-zero. Hit as many as you can before 10 PM close:<br><br>&bull; <strong>\"it's a small world\"</strong> — 13 min avg, always iconic<br>&bull; <strong>Mr. Toad's Wild Ride</strong> — 15 min avg, Disneyland exclusive<br>&bull; <strong>Snow White's Enchanted Wish</strong> — 14 min avg<br>&bull; <strong>Pinocchio's Daring Journey</strong> — 10 min avg<br>&bull; <strong>Alice in Wonderland</strong> — 22 min avg<br>&bull; <strong>Mad Tea Party</strong> — 8 min avg",
         badges: ['Standby', 'Multiple rides'],
         wait: 'Walk-on after 9 PM', land_label: 'Fantasyland', solo: false, mp_next: false },
 
       { section: 'End of night',
         time: '9:50 PM', type: 'food', title: "Late dessert — Carnation Café or Main Street",
-        lat: 33.8096, lng: -117.9185,
+        lat: 33.811117, lng: -117.919081,
         desc: "<strong>Carnation Café (vegan):</strong> Plant-Based Brownie à la Mode (warm brownie + chocolate sauce + vegan vanilla ice cream, ~$10). Check app for late hours.<br><br><strong>Main Street carts:</strong> Mickey Pretzel (vegan — skip the cheese sauce). Popcorn is vegan (coconut/canola oil). Classic walk down a lit-up Main Street toward the exit.",
         badges: ['Vegan options', 'Main Street'],
         wait: '', land_label: 'Main Street, U.S.A.', solo: null, mp_next: false }
@@ -524,7 +558,7 @@ var DAYS = {
       { num: '~65m', lbl: 'Racers wait saved' },
       { num: '5',    lbl: 'Vegan stops' }
     ],
-    center: [33.8058, -117.9200], zoom: 15,
+    center: [33.8058, -117.9195], zoom: 16,
     items: [
       { section: 'Morning — rope drop',
         time: '7:45 AM', type: 'tip', title: 'Arrive & gate strategy',
@@ -533,14 +567,14 @@ var DAYS = {
         badges: [], wait: '', land_label: 'Entrance', solo: null, mp_next: null },
 
       { time: '8:00 AM', type: 'standby', title: "Radiator Springs Racers — rope drop",
-        lat: 33.8026, lng: -117.9213,
+        lat: 33.805713, lng: -117.918609,
         desc: "Walk straight to Cars Land — don't stop. Join standby immediately at park open. Highest avg wait in either park (87 min by midday); at open it's 10–20 min.<br><br><strong>If Racers is down:</strong> pivot to Guardians via your active Multi Pass booking, then return to Racers standby later. Single Rider is also a strong midday fallback for a second run.",
         badges: ['Standby — rope drop', 'avg 87 min midday'],
         wait: '~10–20 min at open / 87 min avg midday', land_label: 'Cars Land', solo: true,
         mp_next: 'Guardians is your active booking. If your 2-hour window has elapsed since the gate, book <strong>Soarin\' Around the World</strong> now.' },
 
       { time: '8:50 AM', type: 'standby', title: "Mater's Junkyard Jamboree + Luigi's Rollickin' Roadsters",
-        lat: 33.8030, lng: -117.9218,
+        lat: 33.806476, lng: -117.918979,
         desc: "Complete Cars Land while waits are still low. Mater's: spinning tow-cable ride (avg 20 min). Luigi's: Italian-themed choreographed bumper cars (avg 29 min). Both are easy standby wins.",
         badges: ['Standby', 'avg 20–29 min'],
         wait: '20–29 min avg', land_label: 'Cars Land', solo: false,
@@ -548,20 +582,20 @@ var DAYS = {
 
       { section: 'Breakfast',
         time: '9:30 AM', type: 'food', title: "Smokejumpers Grill — breakfast",
-        lat: 33.8063, lng: -117.9175,
+        lat: 33.808019, lng: -117.919671,
         desc: "<strong>Vegan:</strong> Plant-Based Chorizo Breakfast Burrito (soy chorizo, spiced potatoes, grilled peppers + onions, plant-based egg, vegan cheddar, pico de gallo, chipotle sauce, spinach tortilla).<br><br><strong>Breakfast until 10 AM only — mobile order ahead.</strong> Located in Grizzly Peak, on the way to Soarin'.",
         badges: ['Vegan options', 'Grizzly Peak'],
         wait: '', land_label: 'Grizzly Peak', solo: null, mp_next: false },
 
       { time: '10:00 AM', type: 'multi', title: "Soarin' Around the World",
-        lat: 33.8063, lng: -117.9172,
+        lat: 33.808377, lng: -117.920023,
         desc: "Use your Multi Pass window (MP chain: #2 of 8). Third-highest avg wait in DCA (51 min). Hang-gliding simulation over world landmarks in a triple-screen IMAX-style dome. Single Rider available.",
         badges: ['Multi Pass', 'avg 51 min'],
         wait: '51 min avg / 90 min max', land_label: 'Grizzly Peak', solo: true,
         mp_next: 'Book <strong>WEB SLINGERS: A Spider-Man Adventure</strong> now — MP chain #3.' },
 
       { time: '10:50 AM', type: 'standby', title: "Grizzly River Run",
-        lat: 33.8067, lng: -117.9180,
+        lat: 33.807472, lng: -117.920517,
         desc: "Whitewater raft ride through a mountain — <strong>you will get wet.</strong> Morning standby manageable (avg 29 min); use Multi Pass if waits exceed 35 min. Single Rider available. Ride earlier in the day when it's warmer. Dry bags sold nearby.<br><br><em>WEB SLINGERS is already your active MP booking from Soarin' — no additional action needed here.</em>",
         badges: ['Standby or Multi Pass', 'avg 29 min'],
         wait: '29 min avg / 61 min max', land_label: 'Grizzly Peak', solo: true,
@@ -569,14 +603,14 @@ var DAYS = {
 
       { section: 'Mid-morning — Avengers Campus',
         time: '11:30 AM', type: 'multi', title: "Guardians of the Galaxy — Mission: BREAKOUT!",
-        lat: 33.8082, lng: -117.9197,
+        lat: 33.806647, lng: -117.91693,
         desc: "Use the Multi Pass window you booked at the gate (MP chain: #1 of 8). Your biggest win of the day — 78 min avg standby, 123 min max. Free-fall drop tower with randomized Guardians of the Galaxy music. Each ride can play a different song.",
         badges: ['Multi Pass', 'avg 78 min'],
         wait: '78 min avg / 123 min max', land_label: 'Avengers Campus', solo: false,
         mp_next: 'WEB SLINGERS should be your active booking — confirm in the app.' },
 
       { time: '12:15 PM', type: 'multi', title: "WEB SLINGERS: A Spider-Man Adventure",
-        lat: 33.8079, lng: -117.9193,
+        lat: 33.806858, lng: -117.918633,
         desc: "Use your Multi Pass window (MP chain: #3 of 8). Interactive shooter — sling webs at Spider-bots in 3D. Single Rider available.",
         badges: ['Multi Pass', 'avg 43 min'],
         wait: '43 min avg / 76 min max', land_label: 'Avengers Campus', solo: true,
@@ -584,41 +618,41 @@ var DAYS = {
 
       { section: 'Lunch — San Fransokyo Square',
         time: '1:00 PM', type: 'food', title: "Lucky Fortune Cookery + Pym Test Kitchen",
-        lat: 33.8068, lng: -117.9232,
+        lat: 33.805747, lng: -117.919797,
         desc: "<strong>Lucky Fortune Cookery (vegan):</strong> Plant-Based Yaki Udon (mushrooms, snap peas, bok choy, dark soy + hoisin) or San Fransokyo Noodle Stir-Fry (fried tofu, broccoli, mushrooms).<br><br><strong>Pym Test Kitchen (Avengers, vegan):</strong> Impossible Spoonful (rigatoni + plant-based meatballs + dairy-free parmesan, $14.49).<br><br><strong>Cocina Cucamonga (vegan):</strong> Tacos Dorados de Papa (crispy potato tacos, dairy-free crema, tomatillo salsa, $10.49). All mobile-orderable.",
         badges: ['Vegan options', 'San Fransokyo / Avengers'],
         wait: '', land_label: 'San Fransokyo Square', solo: null, mp_next: false },
 
       { section: 'Afternoon — Pixar Pier',
         time: '2:00 PM', type: 'multi', title: "Toy Story Midway Mania!",
-        lat: 33.8048, lng: -117.9168,
+        lat: 33.80431, lng: -117.921839,
         desc: "Use your Multi Pass window (MP chain: #4 of 8). 4D interactive shooter through Toy Story carnival games. Massive crowds midday — Multi Pass essential (avg 49 min standby). No Single Rider. Score tracked across all games.",
         badges: ['Multi Pass', 'avg 49 min'],
         wait: '49 min avg / 84 min max', land_label: 'Pixar Pier', solo: false,
         mp_next: 'Book <strong>Incredicoaster</strong> now — MP chain #5.' },
 
       { time: '2:45 PM', type: 'multi', title: "Incredicoaster",
-        lat: 33.8045, lng: -117.9155,
+        lat: 33.804559, lng: -117.920488,
         desc: "Use your Multi Pass window (MP chain: #5 of 8). Outdoor steel coaster along the Pixar Pier waterfront — highest speeds in either park. Great views of the bay and pier. Single Rider available.",
         badges: ['Multi Pass', 'avg 46 min'],
         wait: '46 min avg / 82 min max', land_label: 'Pixar Pier', solo: true,
         mp_next: 'Book <strong>Monsters Inc. Mike & Sulley to the Rescue!</strong> now — MP chain #6.' },
 
       { time: '3:25 PM', type: 'food', title: "Adorable Snowman Frosted Treats",
-        lat: 33.8046, lng: -117.9162,
+        lat: 33.805103, lng: -117.92047,
         desc: "<strong>Vegan:</strong> Lemon or Mango Dole Whip (cone or cup). Pixar Pier Frosty Parfait (lemon Dole Whip + blue raspberry slush + cherry). Dole Whip Flight (lemon, mango, raspberry). Olaf-shaped Frozen Lemon-Strawberry Bar.<br><br>Sit by Paradise Bay looking at the Incredicoaster. Great recharge before the final evening push.",
         badges: ['Vegan', 'Pixar Pier'],
         wait: '', land_label: 'Pixar Pier', solo: null, mp_next: false },
 
       { time: '3:45 PM', type: 'multi', title: "Monsters Inc. Mike & Sulley to the Rescue!",
-        lat: 33.8090, lng: -117.9218,
+        lat: 33.808483, lng: -117.917122,
         desc: "Use your Multi Pass window (MP chain: #6 of 8). Taxi dark ride through Monstropolis. Use standby instead if waits are below 25 min in the afternoon.",
         badges: ['Multi Pass', 'avg 39 min'],
         wait: '39 min avg / 64 min max', land_label: 'Hollywood Land', solo: false,
         mp_next: 'Book <strong>Goofy\'s Sky School</strong> now — MP chain #7.' },
 
       { time: '4:30 PM', type: 'multi', title: "Goofy's Sky School",
-        lat: 33.8055, lng: -117.9175,
+        lat: 33.806299, lng: -117.922874,
         desc: "Use your Multi Pass window (MP chain: #7 of 8). Wild mouse coaster — deceptively intense, fast and jerky. 42\" height requirement. Single Rider available.",
         badges: ['Multi Pass', 'avg 40 min'],
         wait: '40 min avg / 69 min max', land_label: 'Paradise Gardens Park', solo: true,
@@ -626,34 +660,34 @@ var DAYS = {
 
       { section: 'Dinner',
         time: '5:15 PM', type: 'food', title: "Lamplight Lounge",
-        lat: 33.8046, lng: -117.9163,
+        lat: 33.805212, lng: -117.92096,
         desc: "<strong>Best sit-down option in DCA</strong> — gastropub overlooking the Incredicoaster and Paradise Bay. Reserve in advance or check walk-in at the host stand.<br><br><strong>Vegan:</strong> Potato Flautas (plant-based chorizo, dairy-free piquillo crema, serrano-tomatillo salsa, arugula — $19). Impossible Burger. Brussels Caesar Salad. Vegan Nachos (ask off-menu).<br><br>Magic Key holders receive a dining discount.",
         badges: ['Vegan options', 'Pixar Pier — table service'],
         wait: '', land_label: 'Pixar Pier', solo: null, mp_next: false },
 
       { section: 'Evening — final lap',
         time: '6:30 PM', type: 'standby', title: "Pixar Pal-A-Round — Swinging",
-        lat: 33.8044, lng: -117.9160,
+        lat: 33.805122, lng: -117.922212,
         desc: "Giant Mickey-head ferris wheel — choose <strong>Swinging</strong> for the wild experience where gondolas fly outward on a pendulum. Avg 30 min. Evening light on the pier and Paradise Bay is beautiful.",
         badges: ['Standby', 'avg 30 min'],
         wait: '30 min avg / 54 min max', land_label: 'Pixar Pier', solo: false, mp_next: false },
 
       { time: '7:10 PM', type: 'multi', title: "The Little Mermaid + Paradise Gardens sweep",
-        lat: 33.8052, lng: -117.9170,
+        lat: 33.806351, lng: -117.921179,
         desc: "Use your Multi Pass window (MP chain: #8 of 8 — final). Ariel's Undersea Adventure — classic dark ride through the film (avg 18 min).<br><br>Nearby classics with walk-on evening waits:<br>&bull; <strong>Jumpin' Jellyfish</strong> — 12 min avg<br>&bull; <strong>Silly Symphony Swings</strong> — 11 min avg<br>&bull; <strong>Golden Zephyr</strong> — 10 min avg",
         badges: ['Multi Pass', 'avg 10–18 min'],
         wait: '10–18 min avg', land_label: 'Paradise Gardens Park', solo: false,
         mp_next: null },
 
       { time: '7:50 PM', type: 'food', title: "Award Wieners — Plant-Based Philly Dog",
-        lat: 33.8090, lng: -117.9215,
+        lat: 33.807759, lng: -117.918132,
         desc: "<strong>Vegan:</strong> Plant-Based Philly Dog (Impossible hot dog, mushrooms, grilled onions + peppers, dairy-free crema, toasted bun + Filmstrip Fries — $11.99). Known to sell out by mid-afternoon — if available, excellent late snack.<br><br>Hollywood Land, close to the Buena Vista Street park exit.",
         badges: ['Vegan', 'Hollywood Land'],
         wait: '', land_label: 'Hollywood Land', solo: null, mp_next: false },
 
       { section: 'Park close — 9 PM',
         time: '8:30 PM', type: 'tip', title: "Final 30 minutes + exit",
-        lat: 33.8097, lng: -117.9235,
+        lat: 33.805991, lng: -117.922245,
         desc: "Multi Pass chain complete — all 8 windows used. Final walk-on candidates: Golden Zephyr (10 min), Jessie's Critter Carousel (6 min), Turtle Talk with Crush (no wait).<br><br>Walk Buena Vista Street one last time — the 1920s Hollywood Golden Age theming is lovely at night. <strong>Park closes 9 PM.</strong>",
         badges: [], wait: '', land_label: 'Buena Vista Street', solo: null, mp_next: null }
     ]
@@ -662,6 +696,7 @@ var DAYS = {
 
 // ─── STATE ────────────────────────────────────────────────────────────────────
 var currentDay = 'dl';
+var currentView = 'day';
 var currentIdx = null;
 var map = null;
 var allMarkers = []; // [{leaflet, idx, type}]
@@ -676,8 +711,9 @@ function initMap() {
   L.control.zoom({ position: 'bottomright' }).addTo(map);
   map.setView(DAYS.dl.center, DAYS.dl.zoom);
 
-  L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-    subdomains: 'abcd', maxZoom: 19, minZoom: 13, detectRetina: true
+  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 19, minZoom: 13, detectRetina: true,
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
   }).addTo(map);
 
   renderMarkers(currentDay);
@@ -745,7 +781,7 @@ function highlightMarker(idx) {
   }
 }
 
-function setMapMode(mode) {
+function setMapMode(mode, keepSelection) {
   mapMode = mode;
   var btnAll  = document.getElementById('btn-all');
   var btnFood = document.getElementById('btn-food');
@@ -753,9 +789,11 @@ function setMapMode(mode) {
   btnFood.className = 'map-btn' + (mode === 'food' ? ' active-food' : '');
 
   // reset selection when switching view
-  currentIdx = null;
-  document.querySelectorAll('.t-item').forEach(function(el){ el.classList.remove('selected'); });
-  closeSheet();
+  if (!keepSelection) {
+    currentIdx = null;
+    document.querySelectorAll('.t-item').forEach(function(el){ el.classList.remove('selected'); });
+    closeSheet();
+  }
   renderMarkers(currentDay);
 
   // zoom to fit food markers if food mode
@@ -880,9 +918,14 @@ function closeSheet() {
 
 // ─── SWITCH DAY ───────────────────────────────────────────────────────────────
 function switchDay(day) {
-  currentDay = day; currentIdx = null; mapMode = 'all';
+  currentView = 'day';
+  currentDay = day;
+  currentIdx = null;
+  mapMode = 'all';
+  hideFoodGuide();
   document.getElementById('tab-dl').className  = 'day-tab'+(day==='dl'  ? ' active-dl'  : '');
   document.getElementById('tab-dca').className = 'day-tab'+(day==='dca' ? ' active-dca' : '');
+  document.getElementById('tab-food').className = 'day-tab';
   document.getElementById('btn-all').className  = 'map-btn active-all';
   document.getElementById('btn-food').className = 'map-btn';
   renderStats(day);
@@ -893,6 +936,16 @@ function switchDay(day) {
   renderMarkers(day);
   map.flyTo(DAYS[day].center, DAYS[day].zoom, { duration: 0.7 });
   setTimeout(fitTimeline, 50);
+}
+
+function switchFoodView() {
+  currentView = 'food';
+  currentIdx = null;
+  closeSheet();
+  document.getElementById('tab-dl').className = 'day-tab';
+  document.getElementById('tab-dca').className = 'day-tab';
+  document.getElementById('tab-food').className = 'day-tab active-food';
+  showFoodGuide(foodGuidePark || currentDay);
 }
 
 // ─── DYNAMIC TIMELINE HEIGHT ──────────────────────────────────────────────────
@@ -1207,42 +1260,36 @@ var FOOD_GUIDE = {
 var foodGuideOpen = false;
 var foodGuidePark = 'dl';
 
-function toggleFoodGuide() {
-  foodGuideOpen = !foodGuideOpen;
-  var btn = document.getElementById('btn-foodguide');
-  if (foodGuideOpen) {
-    btn.className = 'map-btn active-food';
-    btn.title = 'Close food guide';
-    showFoodGuide(currentDay);
-  } else {
-    btn.className = 'map-btn';
-    btn.title = 'Full food guide';
-    hideFoodGuide();
-  }
-}
-
 function showFoodGuide(park) {
   foodGuideOpen = true;
   foodGuidePark = park || currentDay;
-  document.getElementById('legend-bar').style.display = 'none';
-  document.getElementById('detail-panel').style.display = 'none';
+  // Hide timeline, show food guide in sidebar — map stays visible above
+  document.getElementById('timeline').style.display = 'none';
+  document.getElementById('stats-bar').style.display = 'none';
   var wrap = document.getElementById('food-guide-wrap');
   wrap.style.display = 'flex';
   wrap.innerHTML = buildFoodGuideHTML(foodGuidePark);
+  // Clear detail panel on desktop since food guide is now in sidebar
+  var dp = document.getElementById('detail-panel');
+  if (dp) dp.innerHTML = '<div class="detail-empty"><div class="detail-empty-icon">&#127807;</div><p>Select a venue from the food guide to see details, or tap a map pin.</p></div>';
+  if (map) setTimeout(function(){ map.invalidateSize(); }, 50);
 }
 
 function hideFoodGuide() {
   foodGuideOpen = false;
-  document.getElementById('legend-bar').style.display = '';
-  document.getElementById('detail-panel').style.display = '';
+  document.getElementById('timeline').style.display = '';
+  document.getElementById('stats-bar').style.display = '';
   document.getElementById('food-guide-wrap').style.display = 'none';
   document.getElementById('food-guide-wrap').innerHTML = '';
-  document.getElementById('btn-foodguide').className = 'map-btn';
+  if (map) setTimeout(function(){ map.invalidateSize(); }, 50);
 }
 
 function switchFoodPark(park) {
   foodGuidePark = park;
+  currentDay = park;
   document.getElementById('food-guide-wrap').innerHTML = buildFoodGuideHTML(park);
+  renderMarkers(park);
+  map.flyTo(DAYS[park].center, DAYS[park].zoom, { duration: 0.6 });
 }
 
 function buildFoodGuideHTML(park) {
@@ -1331,6 +1378,113 @@ window.addEventListener('orientationchange', function(){
     fitTimeline();
   }, 300);
 });
+
+// ─── RESIZE HANDLES ───────────────────────────────────────────────────────────
+(function() {
+  // ── Horizontal (sidebar width) ──────────────────────────────────────────────
+  var rh = document.getElementById('resize-h');
+  var sidebar = document.querySelector('.sidebar');
+  var draggingH = false, startXH, startWH;
+
+  rh.addEventListener('mousedown', function(e) {
+    draggingH = true;
+    startXH = e.clientX;
+    startWH = sidebar.offsetWidth;
+    rh.classList.add('dragging');
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+    e.preventDefault();
+  });
+
+  document.addEventListener('mousemove', function(e) {
+    if (!draggingH) return;
+    var newW = Math.min(Math.max(startWH + (e.clientX - startXH), 200), window.innerWidth * 0.7);
+    sidebar.style.width = newW + 'px';
+    if (map) map.invalidateSize();
+  });
+
+  document.addEventListener('mouseup', function() {
+    if (!draggingH) return;
+    draggingH = false;
+    rh.classList.remove('dragging');
+    document.body.style.cursor = '';
+    document.body.style.userSelect = '';
+    if (map) map.invalidateSize();
+  });
+
+  // Touch support for horizontal
+  rh.addEventListener('touchstart', function(e) {
+    draggingH = true;
+    startXH = e.touches[0].clientX;
+    startWH = sidebar.offsetWidth;
+    e.preventDefault();
+  }, { passive: false });
+  document.addEventListener('touchmove', function(e) {
+    if (!draggingH) return;
+    var newW = Math.min(Math.max(startWH + (e.touches[0].clientX - startXH), 200), window.innerWidth * 0.7);
+    sidebar.style.width = newW + 'px';
+    if (map) map.invalidateSize();
+  }, { passive: false });
+  document.addEventListener('touchend', function() {
+    draggingH = false;
+    if (map) map.invalidateSize();
+  });
+
+  // ── Vertical (map height) ───────────────────────────────────────────────────
+  var rv = document.getElementById('resize-v');
+  var mapEl = document.getElementById('map');
+  var draggingV = false, startYV, startHV;
+
+  rv.addEventListener('mousedown', function(e) {
+    draggingV = true;
+    startYV = e.clientY;
+    startHV = mapEl.offsetHeight;
+    rv.classList.add('dragging');
+    document.body.style.cursor = 'row-resize';
+    document.body.style.userSelect = 'none';
+    e.preventDefault();
+  });
+
+  document.addEventListener('mousemove', function(e) {
+    if (!draggingV) return;
+    var sidebarH = sidebar.offsetHeight;
+    var minH = 80, maxH = sidebarH - 120;
+    var newH = Math.min(Math.max(startHV + (e.clientY - startYV), minH), maxH);
+    mapEl.style.height = newH + 'px';
+    if (map) map.invalidateSize();
+    fitTimeline();
+  });
+
+  document.addEventListener('mouseup', function() {
+    if (!draggingV) return;
+    draggingV = false;
+    rv.classList.remove('dragging');
+    document.body.style.cursor = '';
+    document.body.style.userSelect = '';
+    if (map) map.invalidateSize();
+  });
+
+  // Touch support for vertical
+  rv.addEventListener('touchstart', function(e) {
+    draggingV = true;
+    startYV = e.touches[0].clientY;
+    startHV = mapEl.offsetHeight;
+    e.preventDefault();
+  }, { passive: false });
+  document.addEventListener('touchmove', function(e) {
+    if (!draggingV) return;
+    var sidebarH = sidebar.offsetHeight;
+    var newH = Math.min(Math.max(startHV + (e.touches[0].clientY - startYV), 80), sidebarH - 120);
+    mapEl.style.height = newH + 'px';
+    if (map) map.invalidateSize();
+    fitTimeline();
+  }, { passive: false });
+  document.addEventListener('touchend', function() {
+    draggingV = false;
+    if (map) map.invalidateSize();
+  });
+})();
+
 </script>
 </body>
 </html>
