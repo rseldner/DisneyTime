@@ -34,6 +34,7 @@
     --radius-lg: 16px;
   }
 
+  html, body { width: 100%; }
   html { scroll-behavior: smooth; }
   body {
     font-family: 'DM Sans', system-ui, sans-serif;
@@ -73,10 +74,10 @@
   }
 
   /* ── SHELL ───────────────────────────────── */
-  .app-shell { display: flex; flex-direction: row; min-height: calc(100vh - 130px); }
+  .app-shell { display: flex; flex-direction: row; min-height: calc(100vh - 130px); width: 100%; }
 
   .sidebar {
-    background: var(--warm-white);
+    background: var(--warm-white); border-right: 1px solid var(--border);
     display: flex; flex-direction: column;
     height: calc(100vh - 130px); position: sticky; top: 0; overflow: hidden;
     width: 370px; flex-shrink: 0; min-width: 200px; max-width: 70vw;
@@ -183,7 +184,8 @@
   /* ── MOBILE ──────────────────────────────── */
   @media (max-width: 800px) {
     .app-shell { display: block; }
-    .sidebar { height: auto; position: static; border-right: none; border-bottom: 1px solid var(--border); }
+    .sidebar { width: 100%; min-width: 0; max-width: none; height: auto; position: static; border-right: none; border-bottom: 1px solid var(--border); }
+    .resize-h { display: none; }
     #map { height: 175px; }
     .timeline-scroll { max-height: 40vh; /* fallback — overridden by JS */ }
     .legend-bar { display: none; }
