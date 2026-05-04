@@ -63,6 +63,8 @@
   .header-title em { font-style: italic; color: rgba(255,255,255,0.7); }
   .header-meta { display: flex; justify-content: center; gap: 0.5rem; flex-wrap: wrap; margin-top: 1rem; }
   .header-pill { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.15); border-radius: 20px; padding: 4px 12px; font-size: 11px; font-weight: 500; color: rgba(255,255,255,0.85); }
+  .header-link { text-decoration: none; background: rgba(255,255,255,0.16); border-color: rgba(255,255,255,0.28); transition: background 0.15s, border-color 0.15s, color 0.15s; }
+  .header-link:hover { background: rgba(255,255,255,0.24); border-color: rgba(255,255,255,0.42); color: #fff; }
 
   @media (max-width: 800px) {
     .site-header { padding: 0.75rem 1rem 0.8rem; }
@@ -325,6 +327,8 @@
     <span class="header-pill">&#127905; Wed May 6 &mdash; DCA</span>
     <span class="header-pill hide-mobile">&#9889; Multi Pass</span>
     <span class="header-pill hide-mobile">&#127807; Vegan-Friendly</span>
+    <a class="header-pill header-link" href="https://github.com/rseldner/DisneyTime" target="_blank" rel="noopener">Repo</a>
+    <a class="header-pill header-link" href="https://gist.github.com/rseldner/8f5ea196bd5d492fe3489d4eb7a9a928" target="_blank" rel="noopener">Itinerary Gist</a>
   </div>
 </header>
 
