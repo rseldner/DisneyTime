@@ -1,0 +1,1350 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Disneyland Resort — 2-Day Itinerary · May 2026</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --cream: #faf7f2;
+    --warm-white: #fffef9;
+    --ink: #1a1714;
+    --ink-soft: #4a4440;
+    --ink-muted: #8a837c;
+    --border: rgba(26,23,20,0.10);
+    --border-soft: rgba(26,23,20,0.06);
+    --dl-color: #1a5276;
+    --dl-bg: #eaf2fb;
+    --dca-color: #5b2c6f;
+    --dca-bg: #f0e8f5;
+    --multi: #7d6608;
+    --multi-bg: #fefdf0;
+    --standby: #424949;
+    --standby-bg: #f4f6f6;
+    --food: #1e8449;
+    --food-bg: #edfaf3;
+    --tip: #5d6d7e;
+    --radius: 10px;
+    --radius-lg: 16px;
+  }
+
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: 'DM Sans', system-ui, sans-serif;
+    background: var(--cream);
+    color: var(--ink);
+    line-height: 1.6;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ── HEADER ─────────────────────────────── */
+  .site-header {
+    background: var(--ink); color: #fff;
+    padding: 2rem 1.5rem 1.6rem;
+    text-align: center; position: relative; overflow: hidden;
+  }
+  .site-header::before {
+    content: ''; position: absolute; inset: 0;
+    background: radial-gradient(ellipse at 30% 50%, rgba(26,82,118,0.4) 0%, transparent 60%),
+                radial-gradient(ellipse at 70% 50%, rgba(91,44,111,0.4) 0%, transparent 60%);
+    pointer-events: none;
+  }
+  .site-header > * { position: relative; }
+  .header-eyebrow { font-size: 10px; font-weight: 600; letter-spacing: 0.15em; text-transform: uppercase; color: rgba(255,255,255,0.5); margin-bottom: 0.5rem; }
+  .header-title { font-family: 'DM Serif Display', Georgia, serif; font-size: clamp(1.6rem,5vw,2.8rem); font-weight: 400; line-height: 1.1; margin-bottom: 0.6rem; }
+  .header-title em { font-style: italic; color: rgba(255,255,255,0.7); }
+  .header-meta { display: flex; justify-content: center; gap: 0.5rem; flex-wrap: wrap; margin-top: 1rem; }
+  .header-pill { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.15); border-radius: 20px; padding: 4px 12px; font-size: 11px; font-weight: 500; color: rgba(255,255,255,0.85); }
+
+  @media (max-width: 800px) {
+    .site-header { padding: 0.75rem 1rem 0.8rem; }
+    .header-eyebrow { display: none; }
+    .header-title { font-size: 1.1rem; margin-bottom: 0.35rem; }
+    .header-meta { gap: 0.3rem; margin-top: 0.35rem; }
+    .header-pill { font-size: 10px; padding: 3px 9px; }
+    .header-pill.hide-mobile { display: none; }
+  }
+
+  /* ── SHELL ───────────────────────────────── */
+  .app-shell { display: grid; grid-template-columns: 370px 1fr; min-height: calc(100vh - 130px); }
+
+  .sidebar {
+    background: var(--warm-white); border-right: 1px solid var(--border);
+    display: flex; flex-direction: column;
+    height: calc(100vh - 130px); position: sticky; top: 0; overflow: hidden;
+  }
+
+  /* ── MAP ─────────────────────────────────── */
+  #map-wrap { position: relative; flex-shrink: 0; border-bottom: 1px solid var(--border); }
+  #map { height: 230px; }
+
+  .map-toolbar {
+    position: absolute; top: 7px; right: 7px; z-index: 800;
+    display: flex; gap: 4px;
+  }
+  .map-btn {
+    background: var(--warm-white); border: 1px solid var(--border);
+    border-radius: 6px; padding: 4px 8px;
+    font-size: 10px; font-weight: 700; cursor: pointer; color: var(--ink-soft);
+    font-family: 'DM Sans', sans-serif; transition: all 0.15s; white-space: nowrap;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.12);
+  }
+  .map-btn:hover { background: var(--cream); }
+  .map-btn.active-all  { background: var(--dl-bg); color: var(--dl-color); border-color: var(--dl-border); }
+  .map-btn.active-food { background: var(--food-bg); color: var(--food); border-color: var(--food); }
+
+  /* ── TABS ────────────────────────────────── */
+  .day-tabs { display: flex; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+  .day-tab {
+    flex: 1; padding: 10px 8px; font-size: 11px; font-weight: 600;
+    cursor: pointer; border: none; background: none; color: var(--ink-muted);
+    transition: all 0.2s; letter-spacing: 0.02em;
+    border-bottom: 2px solid transparent; margin-bottom: -1px;
+    font-family: 'DM Sans', sans-serif;
+  }
+  .day-tab:hover { color: var(--ink); background: var(--cream); }
+  .day-tab.active-dl  { color: var(--dl-color);  border-bottom-color: var(--dl-color);  background: var(--dl-bg); }
+  .day-tab.active-dca { color: var(--dca-color); border-bottom-color: var(--dca-color); background: var(--dca-bg); }
+  .day-tab.active-food { color: var(--food); border-bottom-color: var(--food); background: var(--food-bg); }
+
+  /* ── STATS ───────────────────────────────── */
+  .stats-bar { display: grid; grid-template-columns: repeat(4,1fr); gap: 1px; background: var(--border); border-bottom: 1px solid var(--border); flex-shrink: 0; }
+  .stat-cell { padding: 8px 4px; text-align: center; background: var(--warm-white); }
+  .stat-cell .num { font-size: 16px; font-weight: 600; line-height: 1; }
+  .stat-cell .lbl { font-size: 9px; color: var(--ink-muted); margin-top: 2px; letter-spacing: 0.02em; line-height: 1.3; }
+  .stat-cell.dl  .num { color: var(--dl-color); }
+  .stat-cell.dca .num { color: var(--dca-color); }
+
+  /* ── TIMELINE ────────────────────────────── */
+  .timeline-scroll { overflow-y: auto; flex: 1; -webkit-overflow-scrolling: touch; }
+  .timeline-scroll::-webkit-scrollbar { width: 3px; }
+  .timeline-scroll::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+  .section-label { font-size: 9px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-muted); padding: 10px 14px 3px; background: var(--cream); border-top: 1px solid var(--border-soft); }
+
+  .t-item { display: flex; cursor: pointer; transition: background 0.15s; }
+  .t-item:hover    { background: var(--cream); }
+  .t-item.selected { background: #eef3fa; }
+
+  .t-time { width: 52px; flex-shrink: 0; padding: 10px 6px 10px 10px; font-size: 10px; font-weight: 600; color: var(--ink-muted); text-align: right; line-height: 1.3; }
+  .t-spine { width: 20px; flex-shrink: 0; display: flex; flex-direction: column; align-items: center; }
+  .t-dot { width: 9px; height: 9px; border-radius: 50%; margin-top: 14px; flex-shrink: 0; border: 2px solid white; }
+  .t-dot.multi   { background: var(--multi);   box-shadow: 0 0 0 1px var(--multi); }
+  .t-dot.standby { background: var(--standby); box-shadow: 0 0 0 1px var(--standby); }
+  .t-dot.food    { background: var(--food);    box-shadow: 0 0 0 1px var(--food); }
+  .t-dot.tip     { background: var(--tip);     box-shadow: 0 0 0 1px var(--tip); }
+  .t-line { width: 1px; background: var(--border); flex: 1; margin-top: 3px; }
+  .t-body { flex: 1; padding: 9px 10px 9px 5px; border-bottom: 1px solid var(--border-soft); display: flex; align-items: flex-start; min-width: 0; }
+  .t-title { font-size: 12px; font-weight: 600; color: var(--ink); line-height: 1.3; margin-bottom: 3px; display: flex; align-items: flex-start; gap: 4px; flex-wrap: wrap; flex: 1; }
+  .t-chevron { color: var(--ink-muted); font-size: 15px; line-height: 1; padding: 0 2px; align-self: center; flex-shrink: 0; }
+
+  .badge { display: inline-block; font-size: 9px; font-weight: 700; padding: 2px 5px; border-radius: 4px; letter-spacing: 0.03em; white-space: nowrap; flex-shrink: 0; }
+  .badge.multi   { background: var(--multi-bg);   color: var(--multi); }
+  .badge.standby { background: var(--standby-bg); color: var(--standby); }
+  .badge.vegan   { background: var(--food-bg);    color: var(--food); }
+  .badge.wait    { background: var(--cream); color: var(--ink-muted); border: 1px solid var(--border); }
+
+  /* ── MAIN PANEL ──────────────────────────── */
+  .main-panel { display: flex; flex-direction: column; background: var(--cream); }
+
+  .legend-bar { display: flex; gap: 14px; flex-wrap: wrap; padding: 9px 20px; background: var(--warm-white); border-bottom: 1px solid var(--border); align-items: center; }
+  .legend-bar-title { font-size: 9px; font-weight: 700; color: var(--ink-muted); letter-spacing: 0.08em; text-transform: uppercase; }
+  .legend-item { display: flex; align-items: center; gap: 5px; font-size: 11px; color: var(--ink-soft); }
+  .legend-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+
+  .detail-panel { flex: 1; padding: 24px 28px; overflow-y: auto; }
+
+  /* ── DETAIL CARD ─────────────────────────── */
+  .detail-card { background: var(--warm-white); border-radius: var(--radius-lg); border: 1px solid var(--border); box-shadow: 0 4px 20px rgba(26,23,20,0.08); padding: 24px 28px; max-width: 560px; }
+  .detail-eyebrow { font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-muted); margin-bottom: 8px; }
+  .detail-title { font-family: 'DM Serif Display', Georgia, serif; font-size: 1.5rem; font-weight: 400; line-height: 1.2; margin-bottom: 12px; }
+  .detail-badges { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 16px; }
+  .detail-badges .badge { font-size: 11px; padding: 3px 9px; }
+  .detail-desc { font-size: 13px; color: var(--ink-soft); line-height: 1.8; border-top: 1px solid var(--border-soft); padding-top: 16px; }
+  .detail-desc strong { color: var(--ink); font-weight: 600; }
+  .mp-next-box { margin-top: 14px; padding: 10px 13px; background: var(--multi-bg); border-left: 3px solid var(--multi); border-radius: 0 6px 6px 0; font-size: 12px; color: var(--multi); font-weight: 600; line-height: 1.5; }
+  .detail-meta { display: grid; grid-template-columns: repeat(2,1fr); gap: 10px; margin-top: 18px; }
+  .detail-meta-cell { background: var(--cream); border-radius: var(--radius); padding: 10px 12px; }
+  .detail-meta-cell .label { font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--ink-muted); margin-bottom: 3px; }
+  .detail-meta-cell .value { font-size: 12px; font-weight: 500; color: var(--ink); }
+
+  .type-multi.dl  .detail-title { color: var(--dl-color); }
+  .type-multi.dca .detail-title { color: var(--dca-color); }
+  .type-food      .detail-title { color: var(--food); }
+
+  /* ── MOBILE ──────────────────────────────── */
+  @media (max-width: 800px) {
+    .app-shell { display: block; }
+    .sidebar { height: auto; position: static; border-right: none; border-bottom: 1px solid var(--border); }
+    #map { height: 175px; }
+    .timeline-scroll { max-height: 40vh; /* fallback — overridden by JS */ }
+    .legend-bar { display: none; }
+    .main-panel { display: block; }
+    .detail-panel { padding: 0; min-height: 0; }
+
+    .detail-sheet {
+      position: fixed; bottom: 0; left: 0; right: 0; z-index: 9999;
+      background: var(--warm-white); border-radius: 18px 18px 0 0;
+      box-shadow: 0 -8px 40px rgba(26,23,20,0.2);
+      transform: translateY(100%);
+      transition: transform 0.32s cubic-bezier(0.32,0.72,0,1);
+      max-height: 82vh; display: flex; flex-direction: column;
+    }
+    .detail-sheet.open { transform: translateY(0); }
+    .sheet-handle { width: 36px; height: 4px; background: rgba(26,23,20,0.15); border-radius: 2px; margin: 12px auto 0; flex-shrink: 0; }
+    .sheet-close { position: absolute; top: 10px; right: 14px; width: 28px; height: 28px; border-radius: 50%; background: var(--cream); border: none; cursor: pointer; font-size: 14px; display: flex; align-items: center; justify-content: center; color: var(--ink-muted); }
+    .sheet-body { overflow-y: auto; padding: 6px 16px 36px; flex: 1; -webkit-overflow-scrolling: touch; }
+    .detail-card { box-shadow: none; border: none; border-radius: 0; padding: 14px 2px 4px; max-width: 100%; background: transparent; }
+
+    .sheet-backdrop { position: fixed; inset: 0; background: rgba(26,23,20,0.3); z-index: 9998; opacity: 0; pointer-events: none; transition: opacity 0.28s; }
+    .sheet-backdrop.visible { opacity: 1; pointer-events: all; }
+  }
+
+  @media (min-width: 801px) {
+    .detail-sheet, .sheet-backdrop { display: none !important; }
+    .t-chevron { display: none; }
+  }
+
+  /* ── GEOLOCATION DOT ─────────────────────── */
+  .geo-dot {
+    width: 14px; height: 14px; border-radius: 50%;
+    background: #1a73e8;
+    border: 2.5px solid #fff;
+    box-shadow: 0 1px 5px rgba(26,115,232,0.5);
+  }
+  .geo-pulse {
+    width: 24px; height: 24px; border-radius: 50%;
+    background: rgba(26,115,232,0.18);
+    border: 1.5px solid rgba(26,115,232,0.4);
+    animation: geo-ping 2s ease-out infinite;
+  }
+  @keyframes geo-ping {
+    0%   { transform: scale(0.6); opacity: 1; }
+    70%  { transform: scale(1.4); opacity: 0.2; }
+    100% { transform: scale(1.4); opacity: 0; }
+  }
+
+  /* ── FOOD GUIDE ──────────────────────────── */
+  .food-guide-wrap { display: flex; flex-direction: column; flex: 1; overflow: hidden; }
+  .food-guide-header { padding: 12px 20px 10px; background: var(--warm-white); border-bottom: 1px solid var(--border); flex-shrink: 0; }
+  .food-guide-header h2 { font-family: 'DM Serif Display', Georgia, serif; font-size: 1.25rem; font-weight: 400; color: var(--food); display: flex; align-items: center; gap: 8px; }
+  .food-guide-badge { background: var(--food-bg); color: var(--food); font-size: 9.5px; font-weight: 700; padding: 2px 7px; border-radius: 4px; }
+  .food-guide-sub { font-size: 10.5px; color: var(--ink-muted); margin-top: 3px; }
+
+  .food-park-tabs { display: flex; gap: 5px; padding: 8px 14px; background: var(--warm-white); border-bottom: 1px solid var(--border); flex-shrink: 0; }
+  .fp-tab { flex: 1; padding: 5px 8px; font-size: 10.5px; font-weight: 600; border: 1px solid var(--border); background: var(--cream); color: var(--ink-muted); border-radius: 6px; cursor: pointer; font-family: 'DM Sans', sans-serif; transition: all 0.15s; }
+  .fp-tab:hover { background: #f0ede8; }
+  .fp-tab.active-dl  { background: var(--dl-bg);  color: var(--dl-color);  border-color: var(--dl-color); }
+  .fp-tab.active-dca { background: var(--dca-bg); color: var(--dca-color); border-color: var(--dca-color); }
+
+  .food-guide-scroll { overflow-y: auto; flex: 1; -webkit-overflow-scrolling: touch; }
+  .food-guide-scroll::-webkit-scrollbar { width: 3px; }
+  .food-guide-scroll::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+  .fg-park-block { padding: 0 16px 20px; }
+  .fg-park-title { font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.12em; padding: 12px 0 8px; border-bottom: 2px solid var(--border); margin-bottom: 12px; }
+  .fg-park-title.dl  { color: var(--dl-color);  border-color: var(--dl-color); }
+  .fg-park-title.dca { color: var(--dca-color); border-color: var(--dca-color); }
+
+  .fg-land { margin-bottom: 14px; }
+  .fg-land-name { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em; color: var(--ink-soft); margin-bottom: 7px; padding-bottom: 4px; border-bottom: 1px solid var(--border-soft); }
+
+  .fg-venue { background: var(--warm-white); border: 1px solid var(--border); border-radius: 8px; margin-bottom: 7px; overflow: hidden; }
+  .fg-venue-hdr { padding: 9px 11px 7px; cursor: pointer; display: flex; align-items: center; justify-content: space-between; gap: 6px; user-select: none; }
+  .fg-venue-hdr:hover { background: var(--cream); }
+  .fg-venue-name { font-size: 12px; font-weight: 600; color: var(--ink); }
+  .fg-venue-right { display: flex; align-items: center; gap: 5px; flex-shrink: 0; }
+  .fg-venue-type { font-size: 9px; font-weight: 600; color: var(--ink-muted); background: var(--cream); padding: 2px 5px; border-radius: 3px; border: 1px solid var(--border); }
+  .fg-chevron { font-size: 10px; color: var(--ink-muted); transition: transform 0.18s; flex-shrink: 0; }
+  .fg-venue.open .fg-chevron { transform: rotate(180deg); }
+
+  .fg-items { display: none; padding: 0 11px 9px; border-top: 1px solid var(--border-soft); }
+  .fg-venue.open .fg-items { display: block; }
+
+  .fg-item { display: flex; align-items: flex-start; gap: 7px; padding: 6px 0; border-bottom: 1px solid var(--border-soft); }
+  .fg-item:last-child { border-bottom: none; }
+  .fg-leaf { flex-shrink: 0; font-size: 11px; margin-top: 1px; }
+  .fg-item-body { flex: 1; min-width: 0; }
+  .fg-item-name { font-size: 11.5px; font-weight: 600; color: var(--ink); line-height: 1.35; }
+  .fg-item-desc { font-size: 10.5px; color: var(--ink-muted); line-height: 1.5; margin-top: 2px; }
+  .fg-price { font-size: 10px; font-weight: 600; color: var(--food); margin-left: 4px; }
+  .tag-new    { display: inline-block; background: #edfaf3; color: var(--food); font-size: 8.5px; font-weight: 700; padding: 1px 4px; border-radius: 3px; border: 1px solid rgba(30,132,73,0.25); margin-left: 4px; vertical-align: middle; }
+  .tag-out    { display: inline-block; background: #fdf2f2; color: #922b21; font-size: 8.5px; font-weight: 700; padding: 1px 4px; border-radius: 3px; border: 1px solid rgba(146,43,33,0.2); margin-left: 4px; vertical-align: middle; }
+  .fg-venue-note { font-size: 10px; color: var(--ink-muted); padding: 5px 0 2px; font-style: italic; line-height: 1.5; }
+  .fg-warn { font-size: 10px; color: #c0392b; font-weight: 600; margin-top: 3px; }
+
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="header-eyebrow">Disneyland Resort &middot; 70th Anniversary Year</div>
+  <h1 class="header-title">Two Days at <em>the Magic</em></h1>
+  <div class="header-meta">
+    <span class="header-pill">&#127984; Tue May 5 &mdash; Disneyland</span>
+    <span class="header-pill">&#127905; Wed May 6 &mdash; DCA</span>
+    <span class="header-pill hide-mobile">&#9889; Multi Pass</span>
+    <span class="header-pill hide-mobile">&#127807; Vegan-Friendly</span>
+  </div>
+</header>
+
+<div class="app-shell">
+  <aside class="sidebar">
+    <div id="map-wrap">
+      <div id="map"></div>
+      <div class="map-toolbar">
+        <button class="map-btn active-all" id="btn-all"  onclick="setMapMode('all')">All stops</button>
+        <button class="map-btn"            id="btn-food" onclick="setMapMode('food')">&#127807; Food</button>
+        <button class="map-btn"            id="btn-locate" onclick="locateMe()" title="My location">&#128205;</button>
+      </div>
+    </div>
+    <div class="day-tabs">
+      <button class="day-tab active-dl" onclick="switchDay('dl')"  id="tab-dl">&#127984; May 5 — Disneyland</button>
+      <button class="day-tab"           onclick="switchDay('dca')" id="tab-dca">&#127905; May 6 — DCA</button>
+      <button class="day-tab"           onclick="switchFoodView()" id="tab-food">&#127807; Food</button>
+    </div>
+    <div class="stats-bar" id="stats-bar"></div>
+    <div class="timeline-scroll" id="timeline"></div>
+  </aside>
+
+  <main class="main-panel" id="main-panel">
+    <div class="legend-bar" id="legend-bar">
+      <span class="legend-bar-title">Key</span>
+      <span class="legend-item"><span class="legend-dot" style="background:var(--multi)"></span>Multi Pass</span>
+      <span class="legend-item"><span class="legend-dot" style="background:var(--standby)"></span>Standby</span>
+      <span class="legend-item"><span class="legend-dot" style="background:var(--food)"></span>Food stop</span>
+      <span class="legend-item"><span class="legend-dot" style="background:var(--tip)"></span>Tip / Strategy</span>
+    </div>
+    <div class="detail-panel" id="detail-panel"></div>
+    <div class="food-guide-wrap" id="food-guide-wrap" style="display:none;"></div>
+  </main>
+</div>
+
+<div class="sheet-backdrop" id="sheet-backdrop" onclick="closeSheet()"></div>
+<div class="detail-sheet" id="detail-sheet">
+  <div class="sheet-handle"></div>
+  <button class="sheet-close" onclick="closeSheet()">&#10005;</button>
+  <div class="sheet-body" id="sheet-body"></div>
+</div>
+
+<script>
+// ─── DATA ─────────────────────────────────────────────────────────────────────
+// mp_next: string = exact ride to book now | false = no MP action | null = chain complete / already active
+var DAYS = {
+  dl: {
+    label: 'Disneyland Park', color: '#1a5276',
+    stats: [
+      { num: '20+',  lbl: 'Rides planned' },
+      { num: '9',    lbl: 'Multi Pass rides' },
+      { num: '~45m', lbl: 'Rise wait saved' },
+      { num: '5',    lbl: 'Vegan stops' }
+    ],
+    center: [33.8140, -117.9200], zoom: 15,
+    items: [
+      { section: 'Morning — rope drop blitz',
+        time: '7:45 AM', type: 'tip', title: 'Arrive & gate strategy',
+        lat: 33.8096, lng: -117.9189,
+        desc: 'Be at the main gate by 7:45. <strong>As you walk in, immediately book Indiana Jones via Multi Pass</strong> — MP chain #1 of 9.<br><br>Rise of the Resistance: <strong>no Single Pass needed</strong>. Head there standby at rope drop — the line is often just 15–20 min at opening vs. 60+ min by mid-morning. Walk fast straight to Galaxy\'s Edge from the entrance.',
+        badges: [], wait: '', land_label: 'Main Entrance', solo: null,
+        mp_next: null },
+
+      { time: '8:00 AM', type: 'standby', title: "Star Wars: Rise of the Resistance",
+        lat: 33.8208, lng: -117.9228,
+        desc: "Walk fast from the gate straight to Galaxy's Edge at the back of the park. Join standby immediately at park open — the first 15–20 min are dramatically shorter before crowds catch up. The ride lasts ~18 min with multiple ride systems, simulator drops, and live-action sequences.",
+        badges: ['Standby — rope drop', 'avg 60 min midday'],
+        wait: '~15–20 min at open / 60 min avg midday', land_label: "Galaxy's Edge", solo: false,
+        mp_next: 'Indiana Jones is your active booking. If your 2-hour window has elapsed since the gate, book <strong>Haunted Mansion</strong> next.' },
+
+      { time: '8:50 AM', type: 'standby', title: "Millennium Falcon: Smugglers Run",
+        lat: 33.8204, lng: -117.9220,
+        desc: "Right next door to Rise — standby is short at this hour. Interactive simulator: you pilot, gun, or engineer the Falcon. Try Single Rider — solo riders are often assigned Pilot, the best role.",
+        badges: ['Standby AM', 'avg 28 min'],
+        wait: '28 min avg / 62 min max', land_label: "Galaxy's Edge", solo: true,
+        mp_next: 'Indiana Jones is your active booking. If your 2-hour window has elapsed, book <strong>Haunted Mansion</strong> now.' },
+
+      { time: '9:30 AM', type: 'food', title: "Ronto Roasters + Docking Bay 7",
+        lat: 33.8206, lng: -117.9222,
+        desc: "<strong>Vegan (Ronto Roasters):</strong> Ronto-less Garden Wrap — Impossible sausage, kimchi slaw, pickled cucumber, gochujang pita. Sells out by early afternoon — mobile order it now for pickup after Indiana Jones.<br><br><strong>Vegan (Docking Bay 7):</strong> Felucian Kefta & Hummus Garden Spread — Impossible meatballs, herbed hummus, pita.<br><br><strong>Milk Stand:</strong> Blue and Green Milk (both vegan, rice-coconut blend).",
+        badges: ['Vegan options', "Galaxy's Edge"],
+        wait: '', land_label: "Galaxy's Edge", solo: null, mp_next: false },
+
+      { time: '10:00 AM', type: 'multi', title: "Indiana Jones Adventure",
+        lat: 33.8122, lng: -117.9249,
+        desc: "Use the Multi Pass window you booked at the gate (MP chain: #1 of 9). One of the original E-tickets, celebrating its 30th anniversary in 2025. Enhanced motion vehicles through the Temple of the Forbidden Eye. Single Rider available.",
+        badges: ['Multi Pass', 'avg 44 min'],
+        wait: '44 min avg / 68 min max', land_label: 'Adventureland', solo: true,
+        mp_next: 'Book <strong>Haunted Mansion</strong> now — MP chain #2.' },
+
+      { time: '10:45 AM', type: 'standby', title: "Jungle Cruise",
+        lat: 33.8118, lng: -117.9245,
+        desc: "Classic slow boat ride with live skipper narration. Short morning wait (avg 15 min). Easy standby win while you're already in Adventureland.",
+        badges: ['Standby', 'avg 15 min'],
+        wait: '15 min avg / 30 min max', land_label: 'Adventureland', solo: false,
+        mp_next: false },
+
+      { time: '11:15 AM', type: 'food', title: "Tiki Juice Bar — Dole Whip",
+        lat: 33.8115, lng: -117.9242,
+        desc: "<strong>Vegan:</strong> Classic pineapple Dole Whip — always plant-based. Walk-up only.<br><br><strong>Nearby at The Tropical Hideaway:</strong> Chile-Mango Whip (pineapple-mango Dole Whip with chamoy and chile-lime — vegan), Blood Orange Agua Fresca Float (vegan).",
+        badges: ['Vegan', 'Adventureland'],
+        wait: '', land_label: 'Adventureland', solo: null, mp_next: false },
+
+      { section: 'Mid-morning — New Orleans Square + Bayou Country',
+        time: '11:30 AM', type: 'standby', title: "Pirates of the Caribbean",
+        lat: 33.8121, lng: -117.9230,
+        desc: "Standby-only since July 2025 — waits are manageable (avg 19 min). The original E-ticket and a park cornerstone. Blue Bayou Restaurant dining room is literally inside this attraction. Two small drops, Captain Jack Sparrow scenes, burning town finale.",
+        badges: ['Standby only', 'avg 19 min'],
+        wait: '19 min avg / 36 min max', land_label: 'New Orleans Square', solo: false,
+        mp_next: 'Haunted Mansion should be your active booking. If not yet booked, book <strong>Haunted Mansion</strong> now — MP chain #2.' },
+
+      { time: '12:00 PM', type: 'multi', title: "Haunted Mansion",
+        lat: 33.8119, lng: -117.9226,
+        desc: "Use your Multi Pass window (MP chain: #2 of 9). Standby climbs to 40+ min by midday — Multi Pass essential. The Doom Buggy dark ride through a 999-haunt antebellum mansion. New ghostly bride Audio-Animatronic added January 2025.",
+        badges: ['Multi Pass', 'avg 30 min'],
+        wait: '30 min avg / 53 min max', land_label: 'New Orleans Square', solo: false,
+        mp_next: 'Book <strong>Tiana\'s Bayou Adventure</strong> now — MP chain #3.' },
+
+      { time: '12:45 PM', type: 'multi', title: "Tiana's Bayou Adventure",
+        lat: 33.8094, lng: -117.9208,
+        desc: "Use your Multi Pass window (MP chain: #3 of 9). New log flume — 50-foot final drop, 19 new critter Audio-Animatronics, three musical bands. Afternoons hit 60+ min standby. Single Rider available.",
+        badges: ['Multi Pass', 'avg 32 min'],
+        wait: '32 min avg / 67 min max', land_label: 'Bayou Country', solo: true,
+        mp_next: 'Book <strong>Big Thunder Mountain Railroad</strong> now — MP chain #4.' },
+
+      { section: 'Lunch',
+        time: '1:30 PM', type: 'food', title: "Café Orleans or Royal Street Veranda",
+        lat: 33.8120, lng: -117.9228,
+        desc: "<strong>Café Orleans (vegan):</strong> Garden Grain Salad (arugula, couscous, farro, garbanzo beans, roasted red pepper, red wine vinaigrette). Breadstick is plant-based.<br><br><strong>Royal Street Veranda (vegan):</strong> Rotating plant-based bread bowl soups — confirm the green leaf icon on the day.<br><br><strong>Mint Julep Bar:</strong> Non-alcoholic mint julep is vegan. Mickey beignets are not.",
+        badges: ['Vegan options', 'New Orleans Square'],
+        wait: '', land_label: 'New Orleans Square', solo: null, mp_next: false },
+
+      { section: 'Afternoon — Frontierland + Tomorrowland',
+        time: '2:15 PM', type: 'multi', title: "Big Thunder Mountain Railroad",
+        lat: 33.8104, lng: -117.9205,
+        desc: '"The Wildest Ride in the Wilderness." Use your Multi Pass window (MP chain: #4 of 9). 40" height. Afternoon standby spikes here. Great views across the Rivers of America from the top.',
+        badges: ['Multi Pass', 'avg 33 min'],
+        wait: '33 min avg / 56 min max', land_label: 'Frontierland', solo: false,
+        mp_next: 'Book <strong>Space Mountain</strong> now — MP chain #5. Do this immediately; Space Mountain windows sell out fast.' },
+
+      { time: '2:50 PM', type: 'standby', title: "Mark Twain Riverboat",
+        lat: 33.8101, lng: -117.9198,
+        desc: "Full paddle-wheel loop around Tom Sawyer Island — avg 10 min wait. A genuine classic and a great chance to rest your feet. Upper deck has perfect views of Frontierland and the Rivers of America.",
+        badges: ['Standby', 'avg 10 min'],
+        wait: '10 min avg', land_label: 'Frontierland', solo: false, mp_next: false },
+
+      { time: '3:20 PM', type: 'standby', title: "Pirate's Lair on Tom Sawyer Island",
+        lat: 33.8098, lng: -117.9195,
+        desc: "Raft across from the Frontierland dock — walk-through caves, fort, suspension bridges, Captain Jack Sparrow theming. Only 5 min avg wait. Great mid-afternoon break from queuing.",
+        badges: ['Standby', 'avg 5 min'],
+        wait: '5 min avg', land_label: 'Frontierland', solo: false, mp_next: false },
+
+      { time: '4:00 PM', type: 'multi', title: "Space Mountain (Hyperspace Mountain)",
+        lat: 33.8146, lng: -117.9170,
+        desc: "Use your Multi Pass window (MP chain: #5 of 9). Second-highest avg wait in the park (51 min). Indoor roller coaster entirely in the dark with Star Wars Hyperspace overlay during select periods. Single Rider available.",
+        badges: ['Multi Pass', 'avg 51 min'],
+        wait: '51 min avg / 81 min max', land_label: 'Tomorrowland', solo: true,
+        mp_next: 'Book <strong>Star Tours</strong> now — MP chain #6.' },
+
+      { time: '4:45 PM', type: 'multi', title: "Star Tours — The Adventures Continue",
+        lat: 33.8148, lng: -117.9165,
+        desc: "Use your Multi Pass window (MP chain: #6 of 9). 250+ randomized story variations including The Mandalorian, Ahsoka, and Andor. 3D motion simulator.",
+        badges: ['Multi Pass', 'avg 24 min'],
+        wait: '24 min avg / 47 min max', land_label: 'Tomorrowland', solo: false,
+        mp_next: 'Book <strong>Matterhorn Bobsleds</strong> now for an evening slot — MP chain #7.' },
+
+      { time: '5:15 PM', type: 'multi', title: "Buzz Lightyear Astro Blasters",
+        lat: 33.8150, lng: -117.9168,
+        desc: "Use Multi Pass or standby — waits drop in late afternoon (avg 18 min). Interactive shooter dark ride — compete for high scores. No height requirement. No Single Rider.<br><br><em>Matterhorn is already your active MP booking from Star Tours — no additional action needed.</em>",
+        badges: ['Multi Pass or Standby PM', 'avg 18 min'],
+        wait: '18 min avg / 35 min max', land_label: 'Tomorrowland', solo: false,
+        mp_next: false },
+
+      { section: 'Dinner',
+        time: '5:50 PM', type: 'food', title: "River Belle Terrace or Rancho del Zócalo",
+        lat: 33.8104, lng: -117.9196,
+        desc: "<strong>River Belle Terrace (vegan):</strong> Impossible Meatloaf (roasted potatoes, garden vegetables, tomato glaze). Plant-Based Grain Bowl. Good riverside patio near Fantasmic viewing area.<br><br><strong>Rancho del Zócalo (vegan):</strong> Hacienda Salad (kale-romaine, achiote mushrooms, grilled nopal salsa, lime corn riblets).<br><br>Check the app for Fantasmic timing — if it's on tonight, the Frontierland riverfront is a great viewing spot.",
+        badges: ['Vegan options', 'Frontierland'],
+        wait: '', land_label: 'Frontierland', solo: null, mp_next: false },
+
+      { section: "Evening — Fantasyland + Mickey's Toontown",
+        time: '7:00 PM', type: 'multi', title: "Matterhorn Bobsleds",
+        lat: 33.8155, lng: -117.9185,
+        desc: "Use your Multi Pass window (MP chain: #7 of 9) — booked earlier from Star Tours. Classic two-track tubular steel mountain coaster, Yeti encounter, 42\" height. Single Rider available.",
+        badges: ['Multi Pass', 'avg 35 min'],
+        wait: '35 min avg / 64 min max', land_label: 'Fantasyland', solo: true,
+        mp_next: 'Book <strong>Mickey & Minnie\'s Runaway Railway</strong> now — MP chain #8.' },
+
+      { time: '7:45 PM', type: 'multi', title: "Mickey & Minnie's Runaway Railway",
+        lat: 33.8178, lng: -117.9196,
+        desc: "Use your Multi Pass window (MP chain: #8 of 9). Trackless dark ride into a Mickey Mouse cartoon short — no height requirement, no Single Rider. Evening is ideal as families with young kids start heading out.",
+        badges: ['Multi Pass', 'avg 33 min'],
+        wait: '33 min avg / 60 min max', land_label: "Mickey's Toontown", solo: false,
+        mp_next: 'Book <strong>Roger Rabbit\'s Car Toon Spin</strong> now — MP chain #9 (final).' },
+
+      { time: '8:15 PM', type: 'multi', title: "Roger Rabbit's Car Toon Spin",
+        lat: 33.8174, lng: -117.9200,
+        desc: "Use your Multi Pass window (MP chain: #9 of 9 — final). Spinning taxi-cab dark ride through Toontown — you control the spin. 32\" height requirement. Short ride with great energy.",
+        badges: ['Multi Pass', 'avg 31 min'],
+        wait: '31 min avg / 55 min max', land_label: "Mickey's Toontown", solo: false,
+        mp_next: null },
+
+      { section: 'Late night — crowds thin after 8 PM',
+        time: '8:45 PM', type: 'standby', title: "Peter Pan's Flight",
+        lat: 33.8158, lng: -117.9215,
+        desc: "Standby-only — waits drop significantly after 8 PM. <strong>Do not queue this midday</strong> (avg 31 min becomes 40–50 at peak). Classic suspended dark ride flying over London and Neverland. One of the original 1955 opening-day attractions.",
+        badges: ['Standby only', 'avg 31 min'],
+        wait: '31 min avg / 43 min max', land_label: 'Fantasyland', solo: false,
+        mp_next: false },
+
+      { time: '9:20 PM', type: 'standby', title: "Classic Fantasyland night sweep",
+        lat: 33.8160, lng: -117.9210,
+        desc: "Late-night waits drop to near-zero. Hit as many as you can before 10 PM close:<br><br>&bull; <strong>\"it's a small world\"</strong> — 13 min avg, always iconic<br>&bull; <strong>Mr. Toad's Wild Ride</strong> — 15 min avg, Disneyland exclusive<br>&bull; <strong>Snow White's Enchanted Wish</strong> — 14 min avg<br>&bull; <strong>Pinocchio's Daring Journey</strong> — 10 min avg<br>&bull; <strong>Alice in Wonderland</strong> — 22 min avg<br>&bull; <strong>Mad Tea Party</strong> — 8 min avg",
+        badges: ['Standby', 'Multiple rides'],
+        wait: 'Walk-on after 9 PM', land_label: 'Fantasyland', solo: false, mp_next: false },
+
+      { section: 'End of night',
+        time: '9:50 PM', type: 'food', title: "Late dessert — Carnation Café or Main Street",
+        lat: 33.8096, lng: -117.9185,
+        desc: "<strong>Carnation Café (vegan):</strong> Plant-Based Brownie à la Mode (warm brownie + chocolate sauce + vegan vanilla ice cream, ~$10). Check app for late hours.<br><br><strong>Main Street carts:</strong> Mickey Pretzel (vegan — skip the cheese sauce). Popcorn is vegan (coconut/canola oil). Classic walk down a lit-up Main Street toward the exit.",
+        badges: ['Vegan options', 'Main Street'],
+        wait: '', land_label: 'Main Street, U.S.A.', solo: null, mp_next: false }
+    ]
+  },
+
+  dca: {
+    label: 'Disney California Adventure', color: '#5b2c6f',
+    stats: [
+      { num: '15+',  lbl: 'Rides planned' },
+      { num: '8',    lbl: 'Multi Pass rides' },
+      { num: '~65m', lbl: 'Racers wait saved' },
+      { num: '5',    lbl: 'Vegan stops' }
+    ],
+    center: [33.8058, -117.9200], zoom: 15,
+    items: [
+      { section: 'Morning — rope drop',
+        time: '7:45 AM', type: 'tip', title: 'Arrive & gate strategy',
+        lat: 33.8097, lng: -117.9232,
+        desc: 'At the gate by 7:45. <strong>Immediately book Guardians of the Galaxy via Multi Pass</strong> — MP chain #1 of 8. This is the most critical booking of the day (avg 78 min standby, max 123 min).<br><br><strong>Radiator Springs Racers strategy:</strong> No Single Pass — head there standby at rope drop. Waits start at just 10–20 min before crowds build. Walk straight to Cars Land without stopping.',
+        badges: [], wait: '', land_label: 'Entrance', solo: null, mp_next: null },
+
+      { time: '8:00 AM', type: 'standby', title: "Radiator Springs Racers — rope drop",
+        lat: 33.8026, lng: -117.9213,
+        desc: "Walk straight to Cars Land — don't stop. Join standby immediately at park open. Highest avg wait in either park (87 min by midday); at open it's 10–20 min.<br><br><strong>If Racers is down:</strong> pivot to Guardians via your active Multi Pass booking, then return to Racers standby later. Single Rider is also a strong midday fallback for a second run.",
+        badges: ['Standby — rope drop', 'avg 87 min midday'],
+        wait: '~10–20 min at open / 87 min avg midday', land_label: 'Cars Land', solo: true,
+        mp_next: 'Guardians is your active booking. If your 2-hour window has elapsed since the gate, book <strong>Soarin\' Around the World</strong> now.' },
+
+      { time: '8:50 AM', type: 'standby', title: "Mater's Junkyard Jamboree + Luigi's Rollickin' Roadsters",
+        lat: 33.8030, lng: -117.9218,
+        desc: "Complete Cars Land while waits are still low. Mater's: spinning tow-cable ride (avg 20 min). Luigi's: Italian-themed choreographed bumper cars (avg 29 min). Both are easy standby wins.",
+        badges: ['Standby', 'avg 20–29 min'],
+        wait: '20–29 min avg', land_label: 'Cars Land', solo: false,
+        mp_next: 'Book <strong>Soarin\' Around the World</strong> now — MP chain #2.' },
+
+      { section: 'Breakfast',
+        time: '9:30 AM', type: 'food', title: "Smokejumpers Grill — breakfast",
+        lat: 33.8063, lng: -117.9175,
+        desc: "<strong>Vegan:</strong> Plant-Based Chorizo Breakfast Burrito (soy chorizo, spiced potatoes, grilled peppers + onions, plant-based egg, vegan cheddar, pico de gallo, chipotle sauce, spinach tortilla).<br><br><strong>Breakfast until 10 AM only — mobile order ahead.</strong> Located in Grizzly Peak, on the way to Soarin'.",
+        badges: ['Vegan options', 'Grizzly Peak'],
+        wait: '', land_label: 'Grizzly Peak', solo: null, mp_next: false },
+
+      { time: '10:00 AM', type: 'multi', title: "Soarin' Around the World",
+        lat: 33.8063, lng: -117.9172,
+        desc: "Use your Multi Pass window (MP chain: #2 of 8). Third-highest avg wait in DCA (51 min). Hang-gliding simulation over world landmarks in a triple-screen IMAX-style dome. Single Rider available.",
+        badges: ['Multi Pass', 'avg 51 min'],
+        wait: '51 min avg / 90 min max', land_label: 'Grizzly Peak', solo: true,
+        mp_next: 'Book <strong>WEB SLINGERS: A Spider-Man Adventure</strong> now — MP chain #3.' },
+
+      { time: '10:50 AM', type: 'standby', title: "Grizzly River Run",
+        lat: 33.8067, lng: -117.9180,
+        desc: "Whitewater raft ride through a mountain — <strong>you will get wet.</strong> Morning standby manageable (avg 29 min); use Multi Pass if waits exceed 35 min. Single Rider available. Ride earlier in the day when it's warmer. Dry bags sold nearby.<br><br><em>WEB SLINGERS is already your active MP booking from Soarin' — no additional action needed here.</em>",
+        badges: ['Standby or Multi Pass', 'avg 29 min'],
+        wait: '29 min avg / 61 min max', land_label: 'Grizzly Peak', solo: true,
+        mp_next: false },
+
+      { section: 'Mid-morning — Avengers Campus',
+        time: '11:30 AM', type: 'multi', title: "Guardians of the Galaxy — Mission: BREAKOUT!",
+        lat: 33.8082, lng: -117.9197,
+        desc: "Use the Multi Pass window you booked at the gate (MP chain: #1 of 8). Your biggest win of the day — 78 min avg standby, 123 min max. Free-fall drop tower with randomized Guardians of the Galaxy music. Each ride can play a different song.",
+        badges: ['Multi Pass', 'avg 78 min'],
+        wait: '78 min avg / 123 min max', land_label: 'Avengers Campus', solo: false,
+        mp_next: 'WEB SLINGERS should be your active booking — confirm in the app.' },
+
+      { time: '12:15 PM', type: 'multi', title: "WEB SLINGERS: A Spider-Man Adventure",
+        lat: 33.8079, lng: -117.9193,
+        desc: "Use your Multi Pass window (MP chain: #3 of 8). Interactive shooter — sling webs at Spider-bots in 3D. Single Rider available.",
+        badges: ['Multi Pass', 'avg 43 min'],
+        wait: '43 min avg / 76 min max', land_label: 'Avengers Campus', solo: true,
+        mp_next: 'Book <strong>Toy Story Midway Mania!</strong> now — MP chain #4.' },
+
+      { section: 'Lunch — San Fransokyo Square',
+        time: '1:00 PM', type: 'food', title: "Lucky Fortune Cookery + Pym Test Kitchen",
+        lat: 33.8068, lng: -117.9232,
+        desc: "<strong>Lucky Fortune Cookery (vegan):</strong> Plant-Based Yaki Udon (mushrooms, snap peas, bok choy, dark soy + hoisin) or San Fransokyo Noodle Stir-Fry (fried tofu, broccoli, mushrooms).<br><br><strong>Pym Test Kitchen (Avengers, vegan):</strong> Impossible Spoonful (rigatoni + plant-based meatballs + dairy-free parmesan, $14.49).<br><br><strong>Cocina Cucamonga (vegan):</strong> Tacos Dorados de Papa (crispy potato tacos, dairy-free crema, tomatillo salsa, $10.49). All mobile-orderable.",
+        badges: ['Vegan options', 'San Fransokyo / Avengers'],
+        wait: '', land_label: 'San Fransokyo Square', solo: null, mp_next: false },
+
+      { section: 'Afternoon — Pixar Pier',
+        time: '2:00 PM', type: 'multi', title: "Toy Story Midway Mania!",
+        lat: 33.8048, lng: -117.9168,
+        desc: "Use your Multi Pass window (MP chain: #4 of 8). 4D interactive shooter through Toy Story carnival games. Massive crowds midday — Multi Pass essential (avg 49 min standby). No Single Rider. Score tracked across all games.",
+        badges: ['Multi Pass', 'avg 49 min'],
+        wait: '49 min avg / 84 min max', land_label: 'Pixar Pier', solo: false,
+        mp_next: 'Book <strong>Incredicoaster</strong> now — MP chain #5.' },
+
+      { time: '2:45 PM', type: 'multi', title: "Incredicoaster",
+        lat: 33.8045, lng: -117.9155,
+        desc: "Use your Multi Pass window (MP chain: #5 of 8). Outdoor steel coaster along the Pixar Pier waterfront — highest speeds in either park. Great views of the bay and pier. Single Rider available.",
+        badges: ['Multi Pass', 'avg 46 min'],
+        wait: '46 min avg / 82 min max', land_label: 'Pixar Pier', solo: true,
+        mp_next: 'Book <strong>Monsters Inc. Mike & Sulley to the Rescue!</strong> now — MP chain #6.' },
+
+      { time: '3:25 PM', type: 'food', title: "Adorable Snowman Frosted Treats",
+        lat: 33.8046, lng: -117.9162,
+        desc: "<strong>Vegan:</strong> Lemon or Mango Dole Whip (cone or cup). Pixar Pier Frosty Parfait (lemon Dole Whip + blue raspberry slush + cherry). Dole Whip Flight (lemon, mango, raspberry). Olaf-shaped Frozen Lemon-Strawberry Bar.<br><br>Sit by Paradise Bay looking at the Incredicoaster. Great recharge before the final evening push.",
+        badges: ['Vegan', 'Pixar Pier'],
+        wait: '', land_label: 'Pixar Pier', solo: null, mp_next: false },
+
+      { time: '3:45 PM', type: 'multi', title: "Monsters Inc. Mike & Sulley to the Rescue!",
+        lat: 33.8090, lng: -117.9218,
+        desc: "Use your Multi Pass window (MP chain: #6 of 8). Taxi dark ride through Monstropolis. Use standby instead if waits are below 25 min in the afternoon.",
+        badges: ['Multi Pass', 'avg 39 min'],
+        wait: '39 min avg / 64 min max', land_label: 'Hollywood Land', solo: false,
+        mp_next: 'Book <strong>Goofy\'s Sky School</strong> now — MP chain #7.' },
+
+      { time: '4:30 PM', type: 'multi', title: "Goofy's Sky School",
+        lat: 33.8055, lng: -117.9175,
+        desc: "Use your Multi Pass window (MP chain: #7 of 8). Wild mouse coaster — deceptively intense, fast and jerky. 42\" height requirement. Single Rider available.",
+        badges: ['Multi Pass', 'avg 40 min'],
+        wait: '40 min avg / 69 min max', land_label: 'Paradise Gardens Park', solo: true,
+        mp_next: 'Book <strong>The Little Mermaid</strong> for an evening slot — MP chain #8 (final).' },
+
+      { section: 'Dinner',
+        time: '5:15 PM', type: 'food', title: "Lamplight Lounge",
+        lat: 33.8046, lng: -117.9163,
+        desc: "<strong>Best sit-down option in DCA</strong> — gastropub overlooking the Incredicoaster and Paradise Bay. Reserve in advance or check walk-in at the host stand.<br><br><strong>Vegan:</strong> Potato Flautas (plant-based chorizo, dairy-free piquillo crema, serrano-tomatillo salsa, arugula — $19). Impossible Burger. Brussels Caesar Salad. Vegan Nachos (ask off-menu).<br><br>Magic Key holders receive a dining discount.",
+        badges: ['Vegan options', 'Pixar Pier — table service'],
+        wait: '', land_label: 'Pixar Pier', solo: null, mp_next: false },
+
+      { section: 'Evening — final lap',
+        time: '6:30 PM', type: 'standby', title: "Pixar Pal-A-Round — Swinging",
+        lat: 33.8044, lng: -117.9160,
+        desc: "Giant Mickey-head ferris wheel — choose <strong>Swinging</strong> for the wild experience where gondolas fly outward on a pendulum. Avg 30 min. Evening light on the pier and Paradise Bay is beautiful.",
+        badges: ['Standby', 'avg 30 min'],
+        wait: '30 min avg / 54 min max', land_label: 'Pixar Pier', solo: false, mp_next: false },
+
+      { time: '7:10 PM', type: 'multi', title: "The Little Mermaid + Paradise Gardens sweep",
+        lat: 33.8052, lng: -117.9170,
+        desc: "Use your Multi Pass window (MP chain: #8 of 8 — final). Ariel's Undersea Adventure — classic dark ride through the film (avg 18 min).<br><br>Nearby classics with walk-on evening waits:<br>&bull; <strong>Jumpin' Jellyfish</strong> — 12 min avg<br>&bull; <strong>Silly Symphony Swings</strong> — 11 min avg<br>&bull; <strong>Golden Zephyr</strong> — 10 min avg",
+        badges: ['Multi Pass', 'avg 10–18 min'],
+        wait: '10–18 min avg', land_label: 'Paradise Gardens Park', solo: false,
+        mp_next: null },
+
+      { time: '7:50 PM', type: 'food', title: "Award Wieners — Plant-Based Philly Dog",
+        lat: 33.8090, lng: -117.9215,
+        desc: "<strong>Vegan:</strong> Plant-Based Philly Dog (Impossible hot dog, mushrooms, grilled onions + peppers, dairy-free crema, toasted bun + Filmstrip Fries — $11.99). Known to sell out by mid-afternoon — if available, excellent late snack.<br><br>Hollywood Land, close to the Buena Vista Street park exit.",
+        badges: ['Vegan', 'Hollywood Land'],
+        wait: '', land_label: 'Hollywood Land', solo: null, mp_next: false },
+
+      { section: 'Park close — 9 PM',
+        time: '8:30 PM', type: 'tip', title: "Final 30 minutes + exit",
+        lat: 33.8097, lng: -117.9235,
+        desc: "Multi Pass chain complete — all 8 windows used. Final walk-on candidates: Golden Zephyr (10 min), Jessie's Critter Carousel (6 min), Turtle Talk with Crush (no wait).<br><br>Walk Buena Vista Street one last time — the 1920s Hollywood Golden Age theming is lovely at night. <strong>Park closes 9 PM.</strong>",
+        badges: [], wait: '', land_label: 'Buena Vista Street', solo: null, mp_next: null }
+    ]
+  }
+};
+
+// ─── STATE ────────────────────────────────────────────────────────────────────
+var currentDay = 'dl';
+var currentView = 'day';
+var currentIdx = null;
+var map = null;
+var allMarkers = []; // [{leaflet, idx, type}]
+var mapMode = 'all';
+var isMobile = false;
+
+function checkMobile() { isMobile = window.innerWidth <= 800; }
+
+// ─── MAP ──────────────────────────────────────────────────────────────────────
+function initMap() {
+  map = L.map('map', { zoomControl: false, attributionControl: true });
+  L.control.zoom({ position: 'bottomright' }).addTo(map);
+  map.setView(DAYS.dl.center, DAYS.dl.zoom);
+
+  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 19, minZoom: 13, detectRetina: true,
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+  }).addTo(map);
+
+  renderMarkers(currentDay);
+}
+
+function dotColor(type, day) {
+  if (type === 'food')    return '#1e8449';
+  if (type === 'multi')   return day === 'dl' ? '#1a5276' : '#5b2c6f';
+  if (type === 'standby') return '#424949';
+  return '#5d6d7e'; // tip
+}
+
+function makeIcon(color, selected) {
+  var s = selected ? 14 : 10;
+  var b = selected ? 3 : 2;
+  var sh = selected
+    ? '0 0 0 3px rgba(0,0,0,0.12), 0 2px 8px rgba(0,0,0,0.45)'
+    : '0 1px 4px rgba(0,0,0,0.3)';
+  return L.divIcon({
+    className: '',
+    html: '<div style="width:'+s+'px;height:'+s+'px;border-radius:50%;background:'+color+';border:'+b+'px solid white;box-shadow:'+sh+'"></div>',
+    iconSize: [s,s], iconAnchor: [Math.ceil(s/2), Math.ceil(s/2)]
+  });
+}
+
+function renderMarkers(day) {
+  allMarkers.forEach(function(m){ map.removeLayer(m.leaflet); });
+  allMarkers = [];
+
+  var d = DAYS[day];
+  d.items.forEach(function(item, idx) {
+    if (!item.lat) return;
+    if (mapMode === 'food' && item.type !== 'food') return;
+
+    var color = dotColor(item.type, day);
+    var sel = idx === currentIdx;
+    var mk = L.marker([item.lat, item.lng], { icon: makeIcon(color, sel) }).addTo(map);
+
+    mk.bindPopup(
+      '<div style="font-family:sans-serif;font-size:11px"><strong style="color:'+color+'">' + item.title + '</strong><br><span style="color:#888;font-size:10px">' + item.time + '</span></div>',
+      { offset: [0,-5], closeButton: false, maxWidth: 180 }
+    );
+
+    if (sel) mk.openPopup();
+
+    mk.on('click', function(){ selectItem(idx); });
+    allMarkers.push({ leaflet: mk, idx: idx, type: item.type });
+  });
+}
+
+function highlightMarker(idx) {
+  var d = DAYS[currentDay];
+  allMarkers.forEach(function(m){
+    var item = d.items[m.idx];
+    if (!item) return;
+    var color = dotColor(item.type, currentDay);
+    var sel = m.idx === idx;
+    m.leaflet.setIcon(makeIcon(color, sel));
+    if (sel) m.leaflet.openPopup();
+  });
+
+  var item = d.items[idx];
+  if (item && item.lat) {
+    map.flyTo([item.lat, item.lng], Math.max(map.getZoom(), 17), { duration: 0.55 });
+  }
+}
+
+function setMapMode(mode, keepSelection) {
+  mapMode = mode;
+  var btnAll  = document.getElementById('btn-all');
+  var btnFood = document.getElementById('btn-food');
+  btnAll.className  = 'map-btn' + (mode === 'all'  ? ' active-all'  : '');
+  btnFood.className = 'map-btn' + (mode === 'food' ? ' active-food' : '');
+
+  // reset selection when switching view
+  if (!keepSelection) {
+    currentIdx = null;
+    document.querySelectorAll('.t-item').forEach(function(el){ el.classList.remove('selected'); });
+    closeSheet();
+  }
+  renderMarkers(currentDay);
+
+  // zoom to fit food markers if food mode
+  if (mode === 'food' && allMarkers.length > 0) {
+    var lats = [], lngs = [];
+    allMarkers.forEach(function(m){
+      lats.push(m.leaflet.getLatLng().lat);
+      lngs.push(m.leaflet.getLatLng().lng);
+    });
+    var bounds = L.latLngBounds(
+      [Math.min.apply(null,lats)-0.002, Math.min.apply(null,lngs)-0.003],
+      [Math.max.apply(null,lats)+0.002, Math.max.apply(null,lngs)+0.003]
+    );
+    map.flyToBounds(bounds, { duration: 0.6, padding: [20,20] });
+  } else {
+    map.flyTo(DAYS[currentDay].center, DAYS[currentDay].zoom, { duration: 0.6 });
+  }
+}
+
+// ─── STATS ────────────────────────────────────────────────────────────────────
+function renderStats(day) {
+  var cls = day === 'dl' ? 'dl' : 'dca';
+  document.getElementById('stats-bar').innerHTML = DAYS[day].stats.map(function(s){
+    return '<div class="stat-cell '+cls+'"><div class="num">'+s.num+'</div><div class="lbl">'+s.lbl+'</div></div>';
+  }).join('');
+}
+
+// ─── BADGE ────────────────────────────────────────────────────────────────────
+function badgeCls(b) {
+  var bl = b.toLowerCase();
+  if (bl.includes('multi'))   return 'multi';
+  if (bl.includes('standby')) return 'standby';
+  if (bl.includes('vegan'))   return 'vegan';
+  return 'wait';
+}
+
+// ─── TIMELINE ────────────────────────────────────────────────────────────────
+function renderTimeline(day) {
+  var html = '';
+  DAYS[day].items.forEach(function(item, idx){
+    if (item.section) html += '<div class="section-label">'+item.section+'</div>';
+    var badges = (item.badges||[]).map(function(b){ return '<span class="badge '+badgeCls(b)+'">'+b+'</span>'; }).join('');
+    html += '<div class="t-item" onclick="selectItem('+idx+')" data-idx="'+idx+'">' +
+      '<div class="t-time">'+item.time+'</div>' +
+      '<div class="t-spine"><div class="t-dot '+item.type+'"></div><div class="t-line"></div></div>' +
+      '<div class="t-body"><div class="t-title">'+item.title+badges+'</div><span class="t-chevron">&#8250;</span></div>' +
+      '</div>';
+  });
+  document.getElementById('timeline').innerHTML = html;
+}
+
+// ─── DETAIL ───────────────────────────────────────────────────────────────────
+function buildDetail(day, idx) {
+  var item = DAYS[day].items[idx];
+  var typeLabel =
+    item.type==='multi'   ? '&#9889; Lightning Lane Multi Pass' :
+    item.type==='standby' ? '&#128694; Standby' :
+    item.type==='food'    ? '&#127807; Food Stop' : '&#128161; Strategy Note';
+
+  var cc = 'detail-card';
+  if (item.type==='multi') cc += ' type-multi '+day;
+  if (item.type==='food')  cc += ' type-food';
+
+  var badges = (item.badges||[]).filter(Boolean).map(function(b){
+    return '<span class="badge '+badgeCls(b)+'">'+b+'</span>';
+  }).join('');
+
+  var mpBox = '';
+  if (item.mp_next && item.mp_next !== false) {
+    mpBox = '<div class="mp-next-box">&#9889; ' + item.mp_next + '</div>';
+  }
+
+  var meta = [];
+  if (item.land_label) meta.push('<div class="detail-meta-cell"><div class="label">Location</div><div class="value">'+item.land_label+'</div></div>');
+  if (item.wait)       meta.push('<div class="detail-meta-cell"><div class="label">Wait times</div><div class="value">'+item.wait+'</div></div>');
+  if (item.solo===true)  meta.push('<div class="detail-meta-cell"><div class="label">Single Rider</div><div class="value">&#10003; Available</div></div>');
+  if (item.solo===false) meta.push('<div class="detail-meta-cell"><div class="label">Single Rider</div><div class="value">&#10007; Not available</div></div>');
+
+  return '<div class="'+cc+'">'+
+    '<div class="detail-eyebrow">'+typeLabel+' &middot; '+item.time+'</div>'+
+    '<h2 class="detail-title">'+item.title+'</h2>'+
+    (badges ? '<div class="detail-badges">'+badges+'</div>' : '')+
+    '<div class="detail-desc">'+item.desc+mpBox+'</div>'+
+    (meta.length ? '<div class="detail-meta">'+meta.join('')+'</div>' : '')+
+    '</div>';
+}
+
+// ─── SELECT ───────────────────────────────────────────────────────────────────
+function selectItem(idx) {
+  document.querySelectorAll('.t-item').forEach(function(el,i){
+    el.classList.toggle('selected', i===idx);
+  });
+  currentIdx = idx;
+  checkMobile();
+
+  var html = buildDetail(currentDay, idx);
+
+  if (isMobile) {
+    document.getElementById('sheet-body').innerHTML = html;
+    document.getElementById('detail-sheet').classList.add('open');
+    document.getElementById('sheet-backdrop').classList.add('visible');
+  } else {
+    document.getElementById('detail-panel').innerHTML = html;
+  }
+
+  // only update markers if in 'all' mode (food mode has filtered set)
+  if (mapMode === 'all') {
+    highlightMarker(idx);
+  } else if (DAYS[currentDay].items[idx].type === 'food') {
+    highlightMarker(idx);
+  } else {
+    // item not on map in food mode — just fly to area
+    var item = DAYS[currentDay].items[idx];
+    if (item.lat) map.flyTo([item.lat, item.lng], 17, { duration: 0.55 });
+  }
+}
+
+function closeSheet() {
+  document.getElementById('detail-sheet').classList.remove('open');
+  document.getElementById('sheet-backdrop').classList.remove('visible');
+}
+
+// ─── SWITCH DAY ───────────────────────────────────────────────────────────────
+function switchDay(day) {
+  currentView = 'day';
+  currentDay = day;
+  currentIdx = null;
+  mapMode = 'all';
+  hideFoodGuide();
+  document.getElementById('tab-dl').className  = 'day-tab'+(day==='dl'  ? ' active-dl'  : '');
+  document.getElementById('tab-dca').className = 'day-tab'+(day==='dca' ? ' active-dca' : '');
+  document.getElementById('tab-food').className = 'day-tab';
+  document.getElementById('btn-all').className  = 'map-btn active-all';
+  document.getElementById('btn-food').className = 'map-btn';
+  renderStats(day);
+  renderTimeline(day);
+  closeSheet();
+  document.querySelectorAll('.t-item').forEach(function(el){ el.classList.remove('selected'); });
+  document.getElementById('detail-panel').innerHTML = '';
+  renderMarkers(day);
+  map.flyTo(DAYS[day].center, DAYS[day].zoom, { duration: 0.7 });
+  setTimeout(fitTimeline, 50);
+}
+
+function switchFoodView() {
+  currentView = 'food';
+  currentIdx = null;
+  closeSheet();
+  document.getElementById('tab-dl').className = 'day-tab';
+  document.getElementById('tab-dca').className = 'day-tab';
+  document.getElementById('tab-food').className = 'day-tab active-food';
+  document.getElementById('detail-panel').innerHTML = '';
+  showFoodGuide(foodGuidePark || currentDay);
+  setMapMode('food', true);
+  setTimeout(fitTimeline, 50);
+}
+
+// ─── DYNAMIC TIMELINE HEIGHT ──────────────────────────────────────────────────
+// Measures every sibling above the timeline and fills remaining viewport height.
+function fitTimeline() {
+  if (!isMobile) return;
+  var tl = document.getElementById('timeline');
+  if (!tl) return;
+
+  var viewH  = window.innerHeight;
+  var rect   = tl.getBoundingClientRect();
+  var topOfTimeline = rect.top + window.scrollY; // distance from page top
+  // Available = viewport height minus where timeline starts minus a small bottom gap
+  var available = viewH - topOfTimeline - 4;
+  // Clamp: never smaller than 3 rows (~120px), never taller than 70vh
+  available = Math.max(available, 120);
+  available = Math.min(available, Math.round(viewH * 0.70));
+  tl.style.maxHeight = available + 'px';
+  tl.style.height    = available + 'px';
+}
+
+// ─── GEOLOCATION ──────────────────────────────────────────────────────────────
+var geoLayer   = null;   // L.LayerGroup holding the dot + ring
+var geoWatchId = null;
+var lastGeoPos = null;
+
+function startGeolocation() {
+  if (!navigator.geolocation) return;
+
+  geoLayer = L.layerGroup().addTo(map);
+
+  geoWatchId = navigator.geolocation.watchPosition(
+    function(pos) {
+      var lat = pos.coords.latitude;
+      var lng = pos.coords.longitude;
+      lastGeoPos = [lat, lng];
+      renderGeoDot(lat, lng, pos.coords.accuracy);
+    },
+    function() { /* silently ignore errors / denials */ },
+    { enableHighAccuracy: true, maximumAge: 5000, timeout: 10000 }
+  );
+}
+
+function renderGeoDot(lat, lng, accuracy) {
+  if (!geoLayer) return;
+  geoLayer.clearLayers();
+
+  // Accuracy circle (faint)
+  if (accuracy && accuracy < 300) {
+    L.circle([lat, lng], {
+      radius: accuracy,
+      color: '#1a73e8', fillColor: '#1a73e8',
+      fillOpacity: 0.08, weight: 1, opacity: 0.3
+    }).addTo(geoLayer);
+  }
+
+  // Outer pulsing ring — CSS animation via a divIcon
+  L.marker([lat, lng], {
+    icon: L.divIcon({
+      className: '',
+      html: '<div class="geo-pulse"></div>',
+      iconSize: [24, 24],
+      iconAnchor: [12, 12]
+    }),
+    interactive: false,
+    zIndexOffset: 500
+  }).addTo(geoLayer);
+
+  // Inner solid dot
+  L.marker([lat, lng], {
+    icon: L.divIcon({
+      className: '',
+      html: '<div class="geo-dot"></div>',
+      iconSize: [14, 14],
+      iconAnchor: [7, 7]
+    }),
+    interactive: false,
+    zIndexOffset: 600
+  }).addTo(geoLayer);
+}
+
+function locateMe() {
+  if (!navigator.geolocation) return;
+  var btn = document.getElementById('btn-locate');
+  if (btn) { btn.textContent = '…'; btn.style.opacity = '0.6'; }
+
+  navigator.geolocation.getCurrentPosition(
+    function(pos) {
+      var lat = pos.coords.latitude;
+      var lng = pos.coords.longitude;
+      lastGeoPos = [lat, lng];
+      renderGeoDot(lat, lng, pos.coords.accuracy);
+      map.flyTo([lat, lng], Math.max(map.getZoom(), 17), { duration: 0.6 });
+      if (btn) { btn.textContent = '📍'; btn.style.opacity = '1'; }
+    },
+    function() {
+      if (btn) { btn.textContent = '📍'; btn.style.opacity = '1'; }
+    },
+    { enableHighAccuracy: true, timeout: 8000 }
+  );
+}
+
+
+// ─── FOOD GUIDE DATA ─────────────────────────────────────────────────────────
+var FOOD_GUIDE = {
+  dl: {
+    label: 'Disneyland Park', cls: 'dl',
+    lands: [
+      { name: 'Main Street, U.S.A.', venues: [
+        { name: 'Carnation Café', type: 'Table service', items: [
+          { name: 'Vegan Mickey-Shaped Waffles', desc: 'Off-menu — request at counter. Most reliable spot in the park.', isNew: false, sellout: false },
+          { name: 'Plant-Based Hot Oatmeal / Overnight Oats', desc: 'With fresh berries and bananas.', price: '$9' },
+          { name: 'Carnation Garden Salad', desc: 'Arugula, carrots, cucumber, radish, fennel, tomatoes, green goddess dressing.', price: '$9' },
+          { name: 'Hearty Veggie Burger', desc: 'House-made bean patty, chipotle mayo, slaw, crispy onions on artisan bun, fresh fruit.', price: '$22' },
+          { name: 'Plant-Based Brownie à la Mode', desc: 'Warm brownie + chocolate sauce + vegan vanilla ice cream.', price: '$10' }
+        ]},
+        { name: 'Jolly Holiday Bakery Café', type: 'Quick service', items: [
+          { name: 'Cranberry-Pecan Salad', desc: 'Served with a vegan-friendly breadstick.' }
+        ], note: 'Most pastries and the famous toasted cheese sandwich are NOT vegan.' },
+        { name: 'Main Street Carts & Refreshment Corner', type: 'Walk-up', items: [
+          { name: 'Mickey Pretzel', desc: 'Order without cheese sauce.' },
+          { name: 'Popcorn', desc: 'Popped in coconut/canola oil — no butter.' },
+          { name: 'Fresh Fruit', desc: 'Apple slices, banana, pineapple spears, etc.' },
+          { name: 'Giant Pickle in a bag', desc: 'A Disneyland classic — always vegan.' }
+        ]}
+      ]},
+      { name: 'Adventureland', venues: [
+        { name: 'Tiki Juice Bar', type: 'Walk-up', items: [
+          { name: 'Classic Pineapple Dole Whip', desc: 'Always plant-based. Mobile order only at this location.' },
+          { name: 'Dole Whip Float', desc: 'Dole pineapple juice + Dole Whip.' }
+        ], note: 'Only classic pineapple is permanently confirmed vegan — always verify seasonal flavors.' },
+        { name: 'The Tropical Hideaway', type: 'Walk-up', items: [
+          { name: 'Dole Whip Swirls', desc: 'Pineapple, mango, strawberry, or raspberry.' },
+          { name: 'Chile-Mango Whip', desc: 'Pineapple-mango Dole Whip with chamoy, mango, chile-lime seasoning.', price: '$8.49' },
+          { name: 'Blood Orange Agua Fresca Float', desc: 'Plant-based. Waterside seating along the Jungle Cruise river.' }
+        ], note: 'Bao buns (Char Siu Pork, Lime Chicken) and pot stickers are NOT vegan.' },
+        { name: 'Bengal Barbecue', type: 'Walk-up', items: [
+          { name: 'Bulgogi Bean Salad', desc: 'Cucumber, edamame, chickpeas, bell peppers, ginger-scallion dressing.', price: '$6.49', isNew: true }
+        ], note: 'Previous Hummus Trio and Vegetable Skewer removed Aug 2025. Skewers share a grill with meat — ask chef if cross-contact matters.' }
+      ]},
+      { name: 'New Orleans Square', venues: [
+        { name: 'Blue Bayou', type: 'Table service — reservations essential', items: [
+          { name: 'Provençal Bean & Herb Pesto Salad', desc: 'Field beans, olives, heirloom tomatoes, pickled shallots, pesto dressing.' },
+          { name: 'Garden Vegetable Shepherd\'s Pie', desc: 'Okra, onions, carrots, mushrooms, mashed potato top.' },
+          { name: 'Crème Brûlée Tart', desc: 'Vanilla bean crème brûlée in a tart shell.' }
+        ], note: 'Reserve 60 days out. Dining room is literally inside the Pirates of the Caribbean attraction.' },
+        { name: 'Cafe Orleans', type: 'Table service', items: [
+          { name: 'Garden Grain Salad', desc: 'Arugula, roasted red pepper, cucumber, couscous, farro, garbanzo beans, tomatoes, red wine vinaigrette + breadstick.', isNew: true }
+        ]},
+        { name: 'Royal Street Veranda', type: 'Walk-up', items: [
+          { name: 'Plant-based bread bowl soup (rotating)', desc: 'Menu rotates — confirm green leaf icon on the day.' }
+        ], note: 'The 2026 plant-based offering rotates; always verify the green leaf icon in the app.' },
+        { name: 'Mint Julep Bar', type: 'Walk-up', items: [
+          { name: 'Mint Julep (non-alcoholic)', desc: 'The classic green minty drink is plant-based.' }
+        ], note: 'Mickey beignets are NOT vegan.' }
+      ]},
+      { name: 'Bayou Country', venues: [
+        { name: 'Hungry Bear BBQ Jamboree', type: 'Quick service', items: [
+          { name: 'Classic Impossible Cheeseburger', desc: 'With dairy-free cheese + fries.' },
+          { name: 'Corn Ribs', desc: 'With coleslaw and beer-battered fries.', isNew: true }
+        ]},
+        { name: 'Harbour Galley', type: 'Walk-up', items: [
+          { name: 'Ratatouille Soup with garlic bread topper', desc: 'Plant-based.', isNew: true },
+          { name: 'Rotating plant-based bread-bowl soups', desc: 'Lentil chili, mushroom-vegetable-farro stew, etc. — verify green leaf.' }
+        ]}
+      ]},
+      { name: "Star Wars: Galaxy's Edge", venues: [
+        { name: 'Ronto Roasters', type: 'Quick service', items: [
+          { name: 'Ronto-less Garden Wrap', desc: 'Impossible plant-based sausage, spicy kimchi slaw, sweet pickled cucumber, gochujang spread in pita. The #1 recommended vegan item in the park.', sellout: true },
+          { name: 'Rising Moons Overnight Oats', desc: 'With dragon fruit. Breakfast only.' }
+        ]},
+        { name: 'Docking Bay 7 Food and Cargo', type: 'Quick service', items: [
+          { name: 'Felucian Kefta & Hummus Garden Spread', desc: 'Impossible plant-based meatballs, herbed hummus, tomato-cucumber relish, pita.', sellout: true }
+        ]},
+        { name: 'Milk Stand', type: 'Walk-up', items: [
+          { name: 'Blue Milk', desc: 'Rice-coconut blend, dairy-free; spirulina-tinted.' },
+          { name: 'Green Milk', desc: 'Rice-coconut blend, dairy-free; turmeric-tinted.' }
+        ]},
+        { name: "Kat Saka's Kettle", type: 'Walk-up cart', items: [
+          { name: 'Outpost Mix Popcorn', desc: 'Sweet/spicy/colorful blend — ingredients confirmed dairy-free.' }
+        ]}
+      ]},
+      { name: 'Frontierland', venues: [
+        { name: 'River Belle Terrace', type: 'Quick service + patio', items: [
+          { name: 'Impossible Meatloaf', desc: 'Roasted potatoes, garden vegetables, tomato glaze, fried shallots.', isNew: true },
+          { name: 'Plant-Based Grain Bowl', desc: 'Brunch & dinner.' },
+          { name: 'Plant-Based Deviled Meatballs & Grits', desc: 'Dinner only.' },
+          { name: 'Plant-Based Cobbler', desc: 'Dessert — brunch & dinner.' }
+        ]},
+        { name: 'Rancho del Zocalo Restaurante', type: 'Quick service', items: [
+          { name: 'Hacienda Salad', desc: 'Kale-romaine, achiote-marinated grilled mushrooms, grilled nopal salsa, chile-lime corn riblets.', isNew: true }
+        ], note: 'Confirm green leaf icon in-app on the day — menu details vary.' }
+      ]},
+      { name: 'Fantasyland', venues: [
+        { name: 'Red Rose Taverne', type: 'Quick service', items: [
+          { name: 'Little Town Harvest Bowl', desc: 'Quinoa, roasted mushrooms, cauliflower, arugula, marinated tomatoes over fries, spicy aïoli.', isNew: true },
+          { name: 'Spicy Garden Burger', desc: 'Black-bean burger with potato bites.' },
+          { name: 'Kale-Chickpea Salad', desc: 'Plant-based.' }
+        ]}
+      ]},
+      { name: "Mickey's Toontown", venues: [
+        { name: 'Café Daisy', type: 'Quick service', items: [
+          { name: 'Caesar Salad Garden Wrap', desc: 'Romaine and kale salad with sun-dried tomato-bean spread, plant-based Caesar dressing, served with fries.', isNew: true }
+        ], note: 'Daisy\'s "Goody-Goody" Donuts contain dairy and eggs — NOT vegan.' }
+      ]},
+      { name: 'Tomorrowland', venues: [
+        { name: 'Galactic Grill', type: 'Quick service', items: [
+          { name: 'Soy Chorizo Country Breakfast Burrito', desc: 'Soy chorizo, spiced potatoes, grilled peppers/onions, plant-based egg, dairy-free cheddar, pico de gallo, chipotle sauce, spinach tortilla.' },
+          { name: 'Impossible Breakfast Bowl', desc: 'Potato bites, plant-based sausage, grilled peppers & onions, plant-based egg, dairy-free cheddar.' },
+          { name: 'Black Bean Veggie Wrap', desc: 'Sun-dried tomato spread, black beans, mixed greens, cucumber, corn-tomato relish — order without feta.' }
+        ]},
+        { name: 'Alien Pizza Planet', type: 'Quick service', items: [
+          { name: 'Sesame-Ginger Vegetable Noodles', desc: 'Plant-based.' },
+          { name: 'Dairy-Free Cheese Pizza', desc: 'Availability varies — ask for the allergy menu.' },
+          { name: 'Plant-Based Bolognese pasta', desc: 'When on menu — verify green leaf icon.' }
+        ]},
+        { name: 'Tomorrowland Fruit Cart', type: 'Walk-up', items: [
+          { name: 'Fresh fruit, frozen banana, frozen lemonade', desc: 'All plant-based.' }
+        ]}
+      ]}
+    ]
+  },
+  dca: {
+    label: 'Disney California Adventure', cls: 'dca',
+    lands: [
+      { name: 'Buena Vista Street', venues: [
+        { name: 'Fiddler, Fifer & Practical Café (Starbucks)', type: 'Quick service', items: [
+          { name: 'Oat-milk lattes, cold brew, plant-based foam', desc: 'Standard Starbucks vegan beverages.' }
+        ], note: 'Pastries are mostly NOT vegan.' },
+        { name: "Mortimer's Market + Buena Vista Street Carts", type: 'Walk-up', items: [
+          { name: 'Caramel Popcorn (BVS cart)', desc: 'The ONLY caramel corn in the entire resort confirmed dairy-free.' },
+          { name: 'Mickey Pretzel, kettle corn', desc: 'Plant-based.' },
+          { name: 'Olaf Frozen Strawberry Lemonade Bar / Outshine Fruit Bar', desc: 'Plant-based.' },
+          { name: 'Whole fruit, hummus & vegetable cups', desc: 'From Mortimer\'s Market — verify dip/dressing.' }
+        ]}
+      ]},
+      { name: 'Hollywood Land', venues: [
+        { name: 'Award Wieners', type: 'Quick service', items: [
+          { name: 'Plant-Based Philly Dog', desc: 'Impossible hot dog, mushrooms, grilled onions and peppers, dairy-free crema, toasted bun, Filmstrip Fries.', price: '$11.99', sellout: true }
+        ], note: 'Filmstrip Fries cooked in a shared fryer. Sells out by mid-afternoon on busy days.' },
+        { name: 'Schmoozies!', type: 'Walk-up', items: [], note: '⚠️ Mangonada Smoothie is NO LONGER veganizable — yogurt comes pre-mixed. Verify other smoothies with cast member.' }
+      ]},
+      { name: 'Avengers Campus', venues: [
+        { name: 'Pym Test Kitchen', type: 'Quick service', items: [
+          { name: 'Impossible Quantum Garden Breakfast', desc: 'Plant-based folded omelet, Impossible breakfast sausage, crispy potato bites, focaccia toast.', price: '$12.49' },
+          { name: 'Impossible Spoonful', desc: 'Rigatoni + ditalini pastas, plant-based meatballs, tomato sauce, dairy-free Parmesan, micro basil.', price: '$14.49' },
+          { name: 'Mini Pasta and Impossible Meat-balls (kids)', desc: 'Kids\' meal version.', price: '$8.99' }
+        ]},
+        { name: 'Shawarma Palace', type: 'Food cart', items: [
+          { name: 'Impossible Victory Falafel', desc: 'Falafel & cauliflower wrap, garlic spread, hummus, coconut yogurt-tahini sauce, pickled vegetables.', price: '$12.99' },
+          { name: 'Impossible Breakfast Sha-Warm-Up', desc: 'Plant-based sausage & egg omelet wrap, dairy-free American cheese, crispy potato bites, spiced maple syrup.', price: '$13.99' }
+        ]}
+      ]},
+      { name: 'Cars Land', venues: [
+        { name: "Flo's V8 Café", type: 'Quick service', items: [
+          { name: 'Fillmore Groovy Greens', desc: 'Romaine and kale, bean and corn salad, cucumbers, tomatoes, crispy quinoa, toasted sunflower seeds, zesty dressing.', isNew: true }
+        ], note: 'The veggie tater bake is NOT vegan (potato base contains milk).' }
+      ]},
+      { name: 'San Fransokyo Square', venues: [
+        { name: 'Lucky Fortune Cookery', type: 'Quick service', items: [
+          { name: 'Plant-Based Yaki Udon', desc: 'Mushrooms, sugar snap peas, roasted red peppers, bok choy, dark soy and hoisin sauces.', price: '$13.49' },
+          { name: 'San Fransokyo Noodle Stir-Fry', desc: 'Fried tofu, broccoli, mushrooms, sesame oil, soy sauce.', isNew: true },
+          { name: "Plant-Based Kids' Yaki Udon", desc: "Kids' portion." }
+        ]},
+        { name: 'Cocina Cucamonga Mexican Grill', type: 'Quick service', items: [
+          { name: 'Tacos Dorados de Papa', desc: 'Crispy potato tacos, cabbage slaw, dairy-free crema, tomatillo salsa.', price: '$10.49' }
+        ], note: 'San Fransokyo-Style Street Corn is NOT vegan (queso fresco, bonito flakes).' },
+        { name: 'Aunt Cass Café', type: 'Quick service', items: [
+          { name: 'Soba Noodle Salad', desc: 'Tofu, cabbage, edamame, carrots, roasted corn, scallions, cilantro, crispy shallots, sesame-ginger dressing.', price: '$15.49' }
+        ], note: 'Most bread-bowl soups contain dairy or meat.' },
+        { name: 'Ghirardelli Soda Fountain', type: 'Dessert', items: [
+          { name: 'Coconut Bliss Vanilla non-dairy sundae', desc: 'Currently the only vegan flavor. Pair with Ghirardelli non-dairy chocolate syrup and sprinkles.' }
+        ], note: 'Cross-contact cannot be guaranteed — Coconut Bliss is not made in-house.' }
+      ]},
+      { name: 'Pixar Pier', venues: [
+        { name: 'Lamplight Lounge', type: 'Table service — gastropub', items: [
+          { name: 'Potato Flautas', desc: 'Plant-based chorizo, dairy-free piquillo crema, serrano-tomatillo salsa, arugula, escabèche. Brunch and lunch/dinner.', price: '$19' },
+          { name: 'Brussels Caesar Salad', desc: 'Plant-based starter.' },
+          { name: 'Impossible Burger', desc: 'Plant-based patty — can be subbed into other burgers (ask).' },
+          { name: 'Vegan Nachos', desc: 'Off-menu — ask your server.' }
+        ], note: 'Magic Key holders receive dining discounts. Reserve ahead or walk in. Lobster Nachos and dairy-liqueur cocktails are NOT vegan.' },
+        { name: 'Adorable Snowman Frosted Treats', type: 'Walk-up', items: [
+          { name: '"It\'s Lemon" Lemon Dole Whip', desc: 'Cone or cup.' },
+          { name: 'Mango Dole Whip', desc: 'Cone or cup.' },
+          { name: 'Pixar Pier Frosty Parfait', desc: 'Lemon Dole Whip + blue raspberry slush + cherry.' },
+          { name: 'Olaf-shaped Frozen Lemon-Strawberry Bar', desc: 'Plant-based.' },
+          { name: '"It\'s a Flight!" Dole Whip Flight', desc: 'Lemon, mango, and raspberry in one serving.' }
+        ]},
+        { name: 'Boardwalk Pizza & Pasta', type: 'Walk-up', items: [
+          { name: 'Creamy Marinara Primavera', desc: 'Rigatoni with marinara-coconut cream sauce and seasonal vegetables. Green-leaf icon.' }
+        ], note: 'Cheese pizza is NOT vegan by default. Señor Buzz churros are NOT vegan.' }
+      ]},
+      { name: 'Paradise Gardens Park', venues: [
+        { name: 'Wine Country Trattoria', type: 'Table service', items: [
+          { name: 'Spaghetti Aglio Olio', desc: 'Spaghetti, seasonal vegetables, garlic, chili flakes, lemon oil.', price: '$24' }
+        ]},
+        { name: 'Paradise Garden Grill', type: 'Quick service (seasonal)', items: [
+          { name: 'Seasonal plant-based skewers/wraps', desc: 'Highly seasonal — verify when in operation.' }
+        ]}
+      ]},
+      { name: 'Grizzly Peak', venues: [
+        { name: 'Smokejumpers Grill', type: 'Quick service', items: [
+          { name: 'Plant-Based Chorizo Breakfast Burrito', desc: 'Soy chorizo, spiced potatoes, grilled peppers, onions, plant-based egg, vegan cheddar, pico, chipotle sauce, spinach tortilla. Breakfast only — until 10 AM.', sellout: false },
+          { name: 'Double Impossible Cheeseburger', desc: 'Two plant-based patties, dairy-free cheddar, lettuce, tomato, pickles, grilled onion, plant-based sauce, crinkle-cut fries.', price: '$14.99' }
+        ]}
+      ]}
+    ]
+  }
+};
+
+// ─── FOOD GUIDE STATE ─────────────────────────────────────────────────────────
+var foodGuideOpen = false;
+var foodGuidePark = 'dl';
+
+function showFoodGuide(park) {
+  foodGuideOpen = true;
+  foodGuidePark = park || currentDay;
+  document.getElementById('legend-bar').style.display = 'none';
+  document.getElementById('detail-panel').style.display = 'none';
+  document.getElementById('stats-bar').style.display = 'none';
+  document.getElementById('timeline').style.display = 'none';
+  var wrap = document.getElementById('food-guide-wrap');
+  wrap.style.display = 'flex';
+  wrap.innerHTML = buildFoodGuideHTML(foodGuidePark);
+}
+
+function hideFoodGuide() {
+  foodGuideOpen = false;
+  document.getElementById('legend-bar').style.display = '';
+  document.getElementById('detail-panel').style.display = '';
+  document.getElementById('stats-bar').style.display = '';
+  document.getElementById('timeline').style.display = '';
+  document.getElementById('food-guide-wrap').style.display = 'none';
+  document.getElementById('food-guide-wrap').innerHTML = '';
+}
+
+function switchFoodPark(park) {
+  foodGuidePark = park;
+  currentDay = park;
+  document.getElementById('food-guide-wrap').innerHTML = buildFoodGuideHTML(park);
+  setMapMode('food', true);
+}
+
+function buildFoodGuideHTML(park) {
+  var data = FOOD_GUIDE[park];
+  var html = '';
+
+  html += '<div class="food-guide-header">' +
+    '<h2>&#127807; Complete Food Guide <span class="food-guide-badge">50+ vegan items</span></h2>' +
+    '<div class="food-guide-sub">All confirmed plant-based options &middot; updated Jan 2026 &middot; always verify &#127807; green leaf icon in-app</div>' +
+  '</div>';
+
+  html += '<div class="food-park-tabs">' +
+    '<button class="fp-tab ' + (park==='dl' ? 'active-dl' : '') + '" onclick="switchFoodPark(&quot;dl&quot;)">&#127984; Disneyland Park</button>' +
+    '<button class="fp-tab ' + (park==='dca' ? 'active-dca' : '') + '" onclick="switchFoodPark(&quot;dca&quot;)">&#127905; Disney California Adventure</button>' +
+  '</div>';
+
+  html += '<div class="food-guide-scroll"><div class="fg-park-block">';
+  html += '<div class="fg-park-title ' + data.cls + '">' + (park==='dl' ? '&#127984;' : '&#127905;') + ' ' + data.label + '</div>';
+
+  data.lands.forEach(function(land, li) {
+    html += '<div class="fg-land"><div class="fg-land-name">' + land.name + '</div>';
+    land.venues.forEach(function(venue, vi) {
+      var vid = 'fg-v-' + park + '-' + li + '-' + vi;
+      html += '<div class="fg-venue" id="' + vid + '">';
+      html += '<div class="fg-venue-hdr" onclick="fgToggle(&quot;' + vid + '&quot;)">' +
+        '<span class="fg-venue-name">' + venue.name + '</span>' +
+        '<div class="fg-venue-right">' +
+          '<span class="fg-venue-type">' + venue.type + '</span>' +
+          '<span class="fg-chevron">&#9660;</span>' +
+        '</div>' +
+      '</div>';
+      html += '<div class="fg-items">';
+      if (venue.items && venue.items.length > 0) {
+        venue.items.forEach(function(item) {
+          html += '<div class="fg-item"><span class="fg-leaf">&#127807;</span><div class="fg-item-body">' +
+            '<div class="fg-item-name">' + item.name +
+              (item.isNew ? '<span class="tag-new">NEW Jan 2026</span>' : '') +
+              (item.sellout ? '<span class="tag-out">Sells out early</span>' : '') +
+              (item.price ? '<span class="fg-price">' + item.price + '</span>' : '') +
+            '</div>' +
+            '<div class="fg-item-desc">' + item.desc + '</div>' +
+          '</div></div>';
+        });
+      }
+      if (venue.note) {
+        html += '<div class="fg-venue-note">' + venue.note + '</div>';
+      }
+      html += '</div></div>';
+    });
+    html += '</div>';
+  });
+
+  html += '</div></div>';
+  return html;
+}
+
+function fgToggle(id) {
+  var el = document.getElementById(id);
+  if (el) el.classList.toggle('open');
+}
+
+// ─── INIT ─────────────────────────────────────────────────────────────────────
+window.addEventListener('DOMContentLoaded', function(){
+  checkMobile();
+  renderStats('dl');
+  renderTimeline('dl');
+  setTimeout(function(){
+    initMap();
+    // Start geolocation after map ready (small extra delay for tile load)
+    setTimeout(startGeolocation, 400);
+  }, 100);
+  // Fit timeline after layout settles
+  setTimeout(fitTimeline, 200);
+});
+
+window.addEventListener('resize', function(){
+  checkMobile();
+  if (map) map.invalidateSize();
+  fitTimeline();
+});
+
+// Also refit when orientation changes (common on mobile)
+window.addEventListener('orientationchange', function(){
+  setTimeout(function(){
+    if (map) map.invalidateSize();
+    fitTimeline();
+  }, 300);
+});
+</script>
+</body>
+</html>
